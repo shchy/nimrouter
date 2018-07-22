@@ -4,16 +4,16 @@ import
     sequtils
 
 type
+    RouteHandler* = proc (req:Request): Future[void]
     Route* = ref object of RootObj
         httpMethod*:        HttpMethod
         path*:              string
-        handler*:           proc (req:Request): Future[void]
+        handler*:           RouteHandler
     Router* = ref object of RootObj
         routes:             seq[Route]
-        notFoundHandler:    proc (req: Request): Future[void]
+        notFoundHandler:    RouteHandler
 
-proc newRouter*(notFoundHandler: proc (req: Request): Future[void]
-                , routes: varargs[Route]): Router =
+proc newRouter*(notFoundHandler: RouteHandler, routes: varargs[Route]): Router =
     result = Router(
         routes: @routes,
         notFoundHandler: notFoundHandler
@@ -26,3 +26,16 @@ proc routing*(router: Router, req:Request) {.async.} =
         await router.notFoundHandler req
     else :
         await filterdByMethod[0].handler req
+
+proc get*(path: string, handler: RouteHandler): Route =
+    return Route(
+        path: path,
+        httpMethod: HttpGet,
+        handler: handler
+    )
+proc post*(path:string, handler: RouteHandler): Route =
+    return Route(
+        path:path,
+        httpMethod: HttpPost,
+        handler: handler
+    )
