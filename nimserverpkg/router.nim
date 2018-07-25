@@ -7,7 +7,7 @@ import
 # Router Types
 type
     RouteResult* = ref object of RootObj
-        request*:           Request
+        request*:           Future[void]
     RouteFunc* = proc (req:Request): RouteResult
     RouteHandler* = proc (f:RouteFunc): RouteFunc
     # Route* = ref object of RootObj
@@ -58,11 +58,12 @@ proc newRouter*(handler: RouteHandler, notFoundHandler: RouteHandler): Router =
     )
 
 proc start(req:Request): RouteResult =
-    return RouteResult(request:req)
+    return RouteResult(request:nil)
     
 
 proc terminate(req: Request, h: RouteHandler): Future[void] =
-    discard (h start) req
+    let res = (h start) req
+    return res.request
 
 proc `>=>`*(h1,h2: RouteHandler): RouteHandler =
     return proc(f: RouteFunc): RouteFunc =
@@ -74,9 +75,11 @@ proc `>=>`*(h1,h2: RouteHandler): RouteHandler =
 proc routingSync(router: Router, req: Request): Future[void] =
     let res = (router.handler start) req
     if res == nil:
-        discard terminate(req, router.notFoundHandler)
+        return terminate(req, router.notFoundHandler)
+    else:
+        return res.request
     
 
-proc routing*(router: Router, req:Request) {.async.} =
-    await router.routingSync(req)
+proc routing*(router: Router, req:Request): Future[void] =
+    return router.routingSync(req)
     

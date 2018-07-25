@@ -8,13 +8,11 @@ proc main() =
 
     proc index(f: RouteFunc): RouteFunc =
         return proc(req: Request) : RouteResult =
-            discard req.respond(Http200, h1 "Hello")
-            return RouteResult(request:req)
+            return RouteResult(request:req.respond(Http200, h1 "Hello"))
 
     proc notfound(f: RouteFunc): RouteFunc =
         return proc(r:Request) : RouteResult =
-            discard r.respond(Http404, "404")
-            return RouteResult(request:r)
+            return RouteResult(request:r.respond(Http404, "404"))
 
     var indexRoute = get >=> index
     
