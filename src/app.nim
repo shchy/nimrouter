@@ -5,6 +5,7 @@ import
     os
 import apppkg/router
 
+
 proc main() =
 
     proc index(f: RouteFunc): RouteFunc =
@@ -26,15 +27,16 @@ proc main() =
 
     var indexRoute = get >=> route("/") >=> index
     var debug = get >=> route("/test/") >=> sleepTest >=> index
-    var a = get >=> index
+    #var a = get >=> index
     
-    var handler = choose(@[indexRoute, debug, a])
+    var handler = choose(@[indexRoute, debug])
     # var testRoute = get("/{i}", index)
     var r = newRouter(handler, notfound)
     
-    proc cb(req:Request) {.async.} =
+    proc cb(req:Request) {.async, gcsafe.} =
         await r.routing(req)
     let server = newAsyncHttpServer(true, true)
     waitfor server.serve(Port(8080), cb)
+
 
 main()
