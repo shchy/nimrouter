@@ -138,6 +138,9 @@ let connect*   = filter(proc(ctx:RouteContext):bool = ctx.request.reqMethod == H
 proc route*(path: string): RouteHandler =
     return filter(proc(ctx: RouteContext): bool = ctx.request.url.path == path )
 
+proc routef*[T](path: string, argsHandler: proc(args: T, f: RouteFunc): RouteFunc): RouteHandler =
+    return proc(next: RouteFunc): RouteFunc =
+        return argsHandler(1, next)
 
 
 

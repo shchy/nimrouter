@@ -46,6 +46,10 @@ proc main() =
     proc redirectTest(ctx: RouteContext): RouteResult =
         ctx.redirect "/"
 
+    proc args(i: int, next: RouteFunc): RouteFunc =
+        return proc(ctx: RouteContext): RouteResult =
+            return ctx.text($i)
+
     let debugAborting = filter(proc(ctx: RouteContext): bool = false)
 
     # setting route
@@ -58,7 +62,9 @@ proc main() =
                     route("/test/")     >=> asCacheable(proc():string="sleep", 60 * 5)  >=> sleepTest   >=> index,
                     route("/redirect/") >=> wrap(redirectTest),
                     route("/hello/")    >=> text "hello, world",
-                    route("/code/")     >=> code Http200
+                    route("/code/")     >=> code Http200,
+                    routef("/format/",  args)
+
                 )
         )
     var r = newRouter(handler, notfound)
