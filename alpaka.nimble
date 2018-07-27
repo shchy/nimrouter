@@ -1,19 +1,18 @@
 # Package
 
 version       = "0.1.0"
-author        = "Anonymous"
-description   = "test"
+author        = "shch"
+description   = "giraffe copy"
 license       = "MIT"
 
 # Dependencies
 
 requires "nim >= 0.16.0"
 
-bin           = @["app"]
 srcDir        = "src"
 binDir        = "bin"
 
 task run, "exec":
-    exec "rm -f ./bin/app"
-    exec "nimble build"
-    exec "./bin/app"
+    exec "rm -f ./example/app"
+    exec "nimble install -y"
+    exec "nim c -r ./example/app.nim"
