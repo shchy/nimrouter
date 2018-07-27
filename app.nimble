@@ -14,6 +14,6 @@ srcDir        = "src"
 binDir        = "bin"
 
 task run, "exec":
-    exec "rm ./bin/app"
+    exec "rm -f ./bin/app"
     exec "nimble build"
     exec "./bin/app"
