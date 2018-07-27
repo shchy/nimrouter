@@ -1,6 +1,6 @@
 import 
-    core,
-    utils
+    alpaka/core,
+    alpaka/utils
 
 export
     core,
