@@ -41,7 +41,7 @@ proc newRouter*(handler: RouteHandler, notFoundHandler: RouteHandler): Router =
 
 # end of handler
 proc final(ctx: RouteContext): RouteResult =
-    return RouteResult.none
+    return RouteResult.find
 
 
 # routing for request
