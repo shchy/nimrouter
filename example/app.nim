@@ -3,9 +3,11 @@ import
     asyncdispatch,
     htmlgen,
     httpcore,
-    os
+    os,
+    tables
 import 
     alpaka
+
 
 proc main() =
 
@@ -42,14 +44,12 @@ proc main() =
             ctx.setHeader("test", "test")
             return next ctx
     
-    proc redirectTest(ctx: RouteContext): RouteResult =
-        ctx.redirect "/"
-
-    proc args(i: int, next: RouteFunc): RouteFunc =
+    proc urlParamTest(next: RouteFunc): RouteFunc =
         return proc(ctx: RouteContext): RouteResult =
-            return ctx.text($i)
+            return ctx.text(ctx.urlParams.getOrDefault("test"))
 
     let debugAborting = filter(proc(ctx: RouteContext): bool = false)
+
 
     # setting route
     var handler = 
@@ -59,10 +59,12 @@ proc main() =
                     route("/")          >=> debugAborting                               >=> index,
                     route("/")          >=> asCacheable(proc():string="world", 60 * 5)  >=> world,
                     route("/test/")     >=> asCacheable(proc():string="sleep", 60 * 5)  >=> sleepTest   >=> index,
-                    route("/redirect/") >=> wrap(redirectTest),
+                    route("/redirect/") >=> redirect "/",
                     route("/hello/")    >=> text "hello, world",
                     route("/code/")     >=> code Http200,
-                    routef("/format/",  args)
+                    routep("/asdf/{test : int}/") >=> debugAborting >=> urlParamTest,
+                    routep("/asdf/{test2 : int}/") >=> urlParamTest,
+                    routep("/asdf/{test3 : string}") >=> wrap(proc(ctx: RouteContext): RouteResult = ctx.text(ctx.urlParams["test3"] ))
 
                 )
         )

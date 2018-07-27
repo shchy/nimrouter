@@ -1,7 +1,9 @@
 import 
     alpaka/core,
-    alpaka/utils
+    alpaka/utils,
+    alpaka/routing
 
 export
     core,
-    utils
+    utils,
+    routing
