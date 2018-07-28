@@ -16,31 +16,13 @@ proc `@`[T](xs:openArray[T]): seq[T] =
         s.add x
     return s
 
-# backup responce
-proc backup(res: RouteResponse): RouteResponse =
-    let code = res.code
-    let body = res.body
-    let headers = newHttpHeaders()
-
-    for key in res.headers.table.keys:
-        for val in res.headers.table[key]:
-            headers.add(key, val)
-    return RouteResponse(
-        code: code,
-        body: body,
-        headers: headers
-    )
-
-# 
-let abort* = RouteResult.none
-
 # choose func until not abort
 proc chooseFuncs(funcs:seq[RouteFunc]): RouteFunc = 
     return proc(ctx: RouteContext): RouteResult =
         if funcs.len == 0:
             return abort
         
-        let tempResponse = ctx.res.backup()
+        let tempResponse = ctx.res.clone()
         let tempUrlParams = ctx.req.urlParams.clone()
         let res = funcs[0] ctx
         if res != abort:

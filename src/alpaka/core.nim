@@ -4,8 +4,8 @@ import
     tables,
     sequtils,
     strutils,
-    asynchttpserver,
-    asyncdispatch
+    mimetypes,
+    os
 import
     request,
     response,
@@ -24,6 +24,10 @@ type
         req*        : RouteRequest
         res*        : RouteResponse
         
+
+# 
+let abort* = RouteResult.none
+
 # next bind
 proc `>=>`*(h1,h2: RouteHandler): RouteHandler =
     return proc(final: RouteFunc): RouteFunc =
@@ -58,3 +62,20 @@ proc getHeader*(ctx: RouteContext, key: string): string =
 proc redirect*(ctx: RouteContext, path: string, code: HttpCode = Http302 ): RouteResult =
     ctx.setHeader("Location", path)
     return ctx.code code
+
+proc sendfile*(ctx: RouteContext, filePath: string): RouteResult =
+    if not existsFile(filePath):
+        return abort 
+    if not os.getFilePermissions(filePath).contains(os.fpOthersRead):
+        return ctx.code Http403
+    let mimeDB = newMimetypes()
+    let ext = (filePath).splitFile.ext
+    let mime = mimeDB.getMimeType(ext[1..ext.len()-1])
+    let fileSize = os.getFileSize(filePath)
+    
+    ctx.setHeader("Content-Type", mime)
+    ctx.setHeader("Content-Length", $fileSize)
+    ctx.res.contentFilePath = filePath
+    ctx.res.code = Http200
+    return RouteResult.find
+
