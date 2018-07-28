@@ -26,6 +26,7 @@ proc chooseFuncs(funcs:seq[RouteFunc]): RouteFunc =
         
         let tempResponse = ctx.res.clone()
         let tempUrlParams = ctx.req.urlParams.clone()
+        let subRouteContext = ctx.subRouteContext
         let res = funcs[0] ctx
         if res != abort:
             return res
@@ -33,6 +34,7 @@ proc chooseFuncs(funcs:seq[RouteFunc]): RouteFunc =
         # reset response
         ctx.res = tempResponse
         ctx.req.urlParams = tempUrlParams
+        ctx.subRouteContext = subRouteContext
         
         # find other
         let f = chooseFuncs funcs[1..funcs.len-1]
@@ -73,7 +75,7 @@ let connect*    = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == Http
 
 # path filter
 proc route*(path: string): RouteHandler =
-    return filter(proc(ctx: RouteContext): bool = ctx.req.url.path == path )
+    return filter(proc(ctx: RouteContext): bool = ctx.req.url.path == ctx.withSubRoute path )
 
 const urlParamRegex = r"{\s?(\w+?)\s?:\s?(int|string|float)\s?}"
 # path filter with url parameter
@@ -81,10 +83,9 @@ const urlParamRegex = r"{\s?(\w+?)\s?:\s?(int|string|float)\s?}"
 #   /user/{ id : string }
 #   /blog/{year : int}/{ month : int }/{ day : int }/{ id : int}
 proc routep*(path: string): RouteHandler =
-    let expectedSegments = path.split("/")
-
     return proc(next: RouteFunc): RouteFunc =
         return proc(ctx: RouteContext): RouteResult =
+            let expectedSegments = (ctx.withSubRoute path).split("/")
             let segemnts = ctx.req.url.path.split("/")
             if expectedSegments.len() != segemnts.len():
                 return abort
@@ -134,11 +135,12 @@ proc serveDir*(path,localPath: string, maxAge: int): RouteHandler =
         localPath = $(parseUri(getAppDir()) / localPath.replace("./","") )
     return proc(next: RouteFunc): RouteFunc =
         return proc(ctx: RouteContext): RouteResult =
-            if not ctx.req.url.path.startsWith(path):
+            let routePath = ctx.withSubRoute path
+            if not ctx.req.url.path.startsWith(routePath):
                 return abort
             
             let reqFilePath = 
-                ctx.req.url.path[path.len()..ctx.req.url.path.len()-1]
+                ctx.req.url.path[routePath.len()..ctx.req.url.path.len()-1]
             let localFilePath = joinPath(localPath, reqFilePath)
             
             if not existsFile localFilePath:
@@ -149,3 +151,17 @@ proc serveDir*(path,localPath: string, maxAge: int): RouteHandler =
             if ctx.isCached(hash, maxAge):
                 return ctx.code(Http304)
             return ctx.sendFile(localFilePath)
+
+proc subRoute*(path: string, handlers: openarray[RouteHandler]): RouteHandler =
+    let hs = @handlers
+    return proc(next: RouteFunc): RouteFunc =
+        return proc(ctx: RouteContext): RouteResult =
+            if not ctx.req.url.path.startsWith(ctx.withSubRoute path):
+                return abort
+            ctx.updateSubRoute path
+            if hs.len() == 0:
+                return next ctx
+                
+            let handler = choose(hs)
+            let f = handler next
+            return f ctx
