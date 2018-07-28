@@ -54,20 +54,21 @@ proc main() =
     # setting route
     var handler = 
         choose(
-            get >=> setHeader >=>
+            get     >=> setHeader   >=>
                 choose(
-                    route("/")          >=> debugAborting                               >=> index,
-                    route("/")          >=> asCacheable(proc():string="world", 60 * 5)  >=> world,
-                    route("/test/")     >=> asCacheable(proc():string="sleep", 60 * 5)  >=> sleepTest   >=> index,
-                    route("/redirect/") >=> redirect "/",
-                    route("/hello/")    >=> text "hello, world",
-                    route("/code/")     >=> code Http200,
-                    routep("/asdf/{test : int}/") >=> debugAborting >=> urlParamTest,
-                    routep("/asdf/{test2 : int}/") >=> urlParamTest,
-                    routep("/asdf/{test3 : string}") >=> wrap(proc(ctx: RouteContext): RouteResult = ctx.text(ctx.urlParams["test3"] ))
-
+                    route("/")                          >=> debugAborting >=> index,
+                    route("/")                          >=> asCacheable(proc():string="world", 60 * 5)  >=> world,
+                    route("/test/")                     >=> asCacheable(proc():string="sleep", 60 * 5)  >=> sleepTest   >=> index,
+                    route("/redirect/")                 >=> redirect "/",
+                    route("/hello/")                    >=> text "hello, world",
+                    route("/code/")                     >=> code Http200,
+                    routep("/asdf/{test : int}/")       >=> debugAborting >=> urlParamTest,
+                    routep("/asdf/{test2 : int}/")      >=> urlParamTest,
+                    routep("/asdf/{test3 : string}")    >=> wrap(proc(ctx: RouteContext): RouteResult = ctx.text(ctx.urlParams["test3"] ))
                 ),
-            notfound >=> notfoundHandler
+            route("/ping/") >=>
+                get                                     >=> text "pong",
+            notfound                                    >=> notfoundHandler
         )
     var r = Router(handler: handler)
     
