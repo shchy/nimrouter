@@ -8,9 +8,7 @@ import
 import 
     alpaka
 
-
 proc main() =
-
     # handlers
     proc index(f: RouteFunc): RouteFunc =
         return proc(ctx: RouteContext) : RouteResult =
@@ -46,10 +44,16 @@ proc main() =
     
     proc urlParamTest(next: RouteFunc): RouteFunc =
         return proc(ctx: RouteContext): RouteResult =
-            return ctx.text(ctx.urlParams.getOrDefault("test"))
+            return ctx.text(ctx.request.getUrlParam("test"))
+
+    proc queryParamtest(next: RouteFunc): RouteFunc =
+        return proc(ctx: RouteContext): RouteResult =
+            let p1 = ctx.request.getQueryParam "p1"
+            let p2 = ctx.request.getQueryParam "p2"
+            return ctx.text p1 & "&" & p2
+
 
     let debugAborting = filter(proc(ctx: RouteContext): bool = false)
-
 
     # setting route
     var handler = 
@@ -64,14 +68,16 @@ proc main() =
                     route("/code/")                     >=> code Http200,
                     routep("/asdf/{test : int}/")       >=> debugAborting >=> urlParamTest,
                     routep("/asdf/{test2 : int}/")      >=> urlParamTest,
-                    routep("/asdf/{test3 : string}")    >=> wrap(proc(ctx: RouteContext): RouteResult = ctx.text(ctx.urlParams["test3"] ))
+                    routep("/asdf/{test3 : string}")    >=> wrap(proc(ctx: RouteContext): RouteResult = ctx.text(ctx.request.getUrlParam("test3") ))
                 ),
             route("/ping/") >=>
                 get                                     >=> text "pong",
+            route("/query")                             >=> queryParamtest,
             notfound                                    >=> notfoundHandler
         )
     var r = Router(handler: handler)
     
+
     # bind router to asynchttpserver
     proc cb(req:Request) {.async, gcsafe.} =
         await r.routing(req)

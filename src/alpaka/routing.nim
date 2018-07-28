@@ -30,10 +30,7 @@ proc backup(res: RouteResponse): RouteResponse =
         body: body,
         headers: headers
     )
-proc backup[T,U](table: Table[T,U]): seq[tuple[a: T, b: U]] =
-    result = @[]
-    for key in table.keys:
-        result.add((key, table[key]))
+
 # 
 let abort* = RouteResult.none
 
@@ -44,14 +41,14 @@ proc chooseFuncs(funcs:seq[RouteFunc]): RouteFunc =
             return abort
         
         let tempResponse = ctx.response.backup()
-        let tempUrlParams = ctx.urlParams.backup()
+        let tempUrlParams = ctx.request.urlParams.clone()
         let res = funcs[0] ctx
         if res != abort:
             return res
         
         # reset response
         ctx.response = tempResponse
-        ctx.urlParams = tempUrlParams.toTable()
+        ctx.request.urlParams = tempUrlParams
         
         # find other
         let f = chooseFuncs funcs[1..funcs.len-1]
@@ -141,7 +138,7 @@ proc routep*(path: string): RouteHandler =
                             discard
                         else: 
                             return abort    
-                    ctx.urlParams.add(name, segment)
+                    ctx.request.urlParams.setParam(name, segment)
                 except:
                     return abort
             
