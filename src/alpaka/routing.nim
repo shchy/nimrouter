@@ -5,9 +5,11 @@ import
     parseutils,
     tables,
     nre, options as opt,
-    cgi
+    cgi,
+    os, uri, md5, times
 import 
-    core
+    core,
+    utils
 
 # varargs to seq
 proc `@`[T](xs:openArray[T]): seq[T] = 
@@ -124,3 +126,27 @@ proc routep*(path: string): RouteHandler =
                 except:
                     return abort
             return next ctx
+            
+proc serveDir*(path,localPath: string, maxAge: int): RouteHandler =
+    # todo path must be terminate "/"
+    var localPath = localPath
+    if not localPath.isAbsolute():
+        localPath = $(parseUri(getAppDir()) / localPath.replace("./","") )
+    return proc(next: RouteFunc): RouteFunc =
+        return proc(ctx: RouteContext): RouteResult =
+            if not ctx.req.url.path.startsWith(path):
+                return abort
+            
+            let reqFilePath = 
+                ctx.req.url.path[path.len()..ctx.req.url.path.len()-1]
+            let localFilePath = joinPath(localPath, reqFilePath)
+            
+            if not existsFile localFilePath:
+                return abort
+                
+            let fileInfo = os.getFileInfo(localFilePath)
+            let hash = md5.getMD5( localFilePath & $(fileInfo.lastWriteTime) )
+            let bindHandler = 
+                asCacheable(proc():string = hash, maxAge) >=> 
+                wrap(proc(ctx:RouteContext): RouteResult = return ctx.sendFile(localFilePath))
+            return (bindHandler next) ctx

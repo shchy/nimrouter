@@ -24,7 +24,7 @@ type
         req*        : RouteRequest
         res*        : RouteResponse
         
-
+let mimeDB = newMimetypes()
 # 
 let abort* = RouteResult.none
 
@@ -40,6 +40,12 @@ proc `>=>`*(h1,h2: RouteHandler): RouteHandler =
 proc final*(ctx: RouteContext): RouteResult {.procvar.} =
     return RouteResult.find
 
+proc setHeader*(ctx: RouteContext, key, val: string): void =
+    ctx.res.headers.add(key, val)
+
+proc getHeader*(ctx: RouteContext, key: string): string =
+    return ctx.req.headers.getOrDefault(key)
+
 ### context utils
 proc resp*(ctx: RouteContext, code: HttpCode, content: string): RouteResult =
     ctx.res.code = code
@@ -51,13 +57,9 @@ proc code*(ctx: RouteContext, code: HttpCode): RouteResult =
     return RouteResult.find
     
 proc text*(ctx: RouteContext, content: string): RouteResult =
+    var mime = mimeDB.getMimeType("html")
+    ctx.setHeader("Content-Type", mime)
     return ctx.resp(Http200, content)
-
-proc setHeader*(ctx: RouteContext, key, val: string): void =
-    ctx.res.headers.add(key, val)
-
-proc getHeader*(ctx: RouteContext, key: string): string =
-    return ctx.req.headers.getOrDefault(key)
 
 proc redirect*(ctx: RouteContext, path: string, code: HttpCode = Http302 ): RouteResult =
     ctx.setHeader("Location", path)
@@ -68,7 +70,6 @@ proc sendfile*(ctx: RouteContext, filePath: string): RouteResult =
         return abort 
     if not os.getFilePermissions(filePath).contains(os.fpOthersRead):
         return ctx.code Http403
-    let mimeDB = newMimetypes()
     let ext = (filePath).splitFile.ext
     let mime = mimeDB.getMimeType(ext[1..ext.len()-1])
     let fileSize = os.getFileSize(filePath)

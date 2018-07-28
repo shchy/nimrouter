@@ -3,12 +3,10 @@ import
     alpaka/utils,
     alpaka/routing,
     alpaka/router,
-    alpaka/params,
-    alpaka/fileserve
+    alpaka/params
 
 export
     core,
     router,
     utils,
-    routing,
-    fileserve
+    routing
