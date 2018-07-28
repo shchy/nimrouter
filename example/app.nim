@@ -35,7 +35,7 @@ proc main() =
             echo "wakeup"
             return f ctx
 
-    proc notfound(f: RouteFunc): RouteFunc =
+    proc notfoundHandler(f: RouteFunc): RouteFunc =
         return proc(ctx: RouteContext) : RouteResult =
             return ctx.resp(Http404, h1 "404")
 
@@ -66,9 +66,10 @@ proc main() =
                     routep("/asdf/{test2 : int}/") >=> urlParamTest,
                     routep("/asdf/{test3 : string}") >=> wrap(proc(ctx: RouteContext): RouteResult = ctx.text(ctx.urlParams["test3"] ))
 
-                )
+                ),
+            notfound >=> notfoundHandler
         )
-    var r = newRouter(handler, notfound)
+    var r = Router(handler: handler)
     
     # bind router to asynchttpserver
     proc cb(req:Request) {.async, gcsafe.} =

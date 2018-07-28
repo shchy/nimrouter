@@ -9,6 +9,62 @@ import
 import 
     core
 
+# varargs to seq
+proc `@`[T](xs:openArray[T]): seq[T] = 
+    var s: seq[T] = @[]
+    for x in xs:
+        s.add x
+    return s
+
+# backup responce
+proc backup(res: RouteResponse): RouteResponse =
+    let code = res.code
+    let body = res.body
+    let headers = newHttpHeaders()
+
+    for key in res.headers.table.keys:
+        for val in res.headers.table[key]:
+            headers.add(key, val)
+    return RouteResponse(
+        code: code,
+        body: body,
+        headers: headers
+    )
+proc backup[T,U](table: Table[T,U]): seq[tuple[a: T, b: U]] =
+    result = @[]
+    for key in table.keys:
+        result.add((key, table[key]))
+# 
+let abort* = RouteResult.none
+
+# choose func until not abort
+proc chooseFuncs(funcs:seq[RouteFunc]): RouteFunc = 
+    return proc(ctx: RouteContext): RouteResult =
+        if funcs.len == 0:
+            return abort
+        
+        let tempResponse = ctx.response.backup()
+        let tempUrlParams = ctx.urlParams.backup()
+        let res = funcs[0] ctx
+        if res != abort:
+            return res
+        
+        # reset response
+        ctx.response = tempResponse
+        ctx.urlParams = tempUrlParams.toTable()
+        
+        # find other
+        let f = chooseFuncs funcs[1..funcs.len-1]
+        return f ctx
+
+# choose handler until not abort
+proc choose*(handlers: varargs[RouteHandler]): RouteHandler =
+    var hx = @handlers
+    return proc(final: RouteFunc): RouteFunc =
+        var funcs = hx.map(proc(h:RouteHandler):RouteFunc = h final)
+        return proc(ctx: RouteContext): RouteResult =
+            return chooseFuncs(funcs) ctx
+
 ### filters
 
 # filter by context
@@ -20,6 +76,8 @@ proc filter*(isMatch:proc(ctx:RouteContext): bool): RouteHandler =
             else:
                 return abort
 
+# all
+let notfound*    = filter(proc(ctx: RouteContext): bool = true)
 
 # httpmethod filter
 let head*   = filter(proc(ctx:RouteContext):bool = ctx.request.reqMethod == HttpHead)
@@ -37,6 +95,10 @@ proc route*(path: string): RouteHandler =
     return filter(proc(ctx: RouteContext): bool = ctx.request.url.path == path )
 
 const urlParamRegex = r"{\s?(\w+?)\s?:\s?(int|string|float)\s?}"
+# path filter with url parameter
+# ex.
+#   /user/{ id : string }
+#   /blog/{year : int}/{ month : int }/{ day : int }/{ id : int}
 proc routep*(path: string): RouteHandler =
     let expectedSegments = path.split("/")
 
@@ -45,6 +107,7 @@ proc routep*(path: string): RouteHandler =
             let segemnts = ctx.request.url.path.split("/")
             if expectedSegments.len() != segemnts.len():
                 return abort
+                
             let zipped = 
                 expectedSegments.zip(segemnts)
 
@@ -59,10 +122,12 @@ proc routep*(path: string): RouteHandler =
                 let maybe = expect.match(re urlParamRegex)
                 if maybe.isNone():
                     return abort
+                    
                 let match = opt.get maybe
                 let captures = match.captures().toSeq()
                 if captures.len() != 2:
                     return abort
+                    
                 let name = captures[0]
                 let typeName = captures[1]
                 
@@ -72,8 +137,10 @@ proc routep*(path: string): RouteHandler =
                             discard segment.parseInt()
                         of "float":
                             discard segment.parseFloat()
+                        of "string":
+                            discard
                         else: 
-                            discard    
+                            return abort    
                     ctx.urlParams.add(name, segment)
                 except:
                     return abort
