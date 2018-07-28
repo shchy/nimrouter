@@ -8,21 +8,31 @@ import
 import 
     alpaka
 
-
 proc main() =
-
     # handlers
     proc index(f: RouteFunc): RouteFunc =
         return proc(ctx: RouteContext) : RouteResult =
-            echo "hello"
             return ctx.text html(
-                h1 "hello",
-                a(href="/", "root")
+                h1 "index",
+                form(action="/post/", `method`="POST",
+                    input(`type`="text", name="name"),
+                    input(`type`="radio", name="sex", value="male"),
+                    input(`type`="radio", name="sex", value="female"),
+                    input(`type`="submit", value="send")
+                )
+                #a(href="/", "root")
+            )
+    proc postTest(next: RouteFunc): RouteFunc =
+        return proc(ctx: RouteContext): RouteResult =
+            let name = ctx.req.getFormParam "name"
+            let sex = ctx.req.getFormParam "sex"
+            return ctx.text html(
+                name,
+                sex 
             )
 
     proc world(f: RouteFunc): RouteFunc =
         return proc(ctx: RouteContext): RouteResult =
-            echo "world"
             return ctx.text html(
                     h1 "world",
                     a(href="/test/", "test")
@@ -30,9 +40,7 @@ proc main() =
 
     proc sleepTest(f : RouteFunc): RouteFunc =
         return proc(ctx: RouteContext): RouteResult =
-            echo "sleep"
             sleep 1000 * 1
-            echo "wakeup"
             return f ctx
 
     proc notfoundHandler(f: RouteFunc): RouteFunc =
@@ -46,32 +54,43 @@ proc main() =
     
     proc urlParamTest(next: RouteFunc): RouteFunc =
         return proc(ctx: RouteContext): RouteResult =
-            return ctx.text(ctx.urlParams.getOrDefault("test"))
+            return ctx.text(ctx.req.getUrlParam("test"))
+
+    proc queryParamtest(next: RouteFunc): RouteFunc =
+        return proc(ctx: RouteContext): RouteResult =
+            let p1 = ctx.req.getQueryParam "p1"
+            let p2 = ctx.req.getQueryParam "p2"
+            return ctx.text p1 & "&" & p2
+
 
     let debugAborting = filter(proc(ctx: RouteContext): bool = false)
-
 
     # setting route
     var handler = 
         choose(
             get     >=> setHeader   >=>
                 choose(
-                    route("/")                          >=> debugAborting >=> index,
-                    route("/")                          >=> asCacheable(proc():string="world", 60 * 5)  >=> world,
-                    route("/test/")                     >=> asCacheable(proc():string="sleep", 60 * 5)  >=> sleepTest   >=> index,
+                    route("/")                          >=> index,
+                    route("/hello")                     >=> asCacheable(proc():string="world", 60 * 5)  >=> text "hello",
+                    route("/world/")                    >=> asCacheable(proc():string="sleep", 60 * 5)  >=> sleepTest   >=> world,
                     route("/redirect/")                 >=> redirect "/",
-                    route("/hello/")                    >=> text "hello, world",
+                    route("/helloworld/")               >=> debugAborting >=> text "not work",
+                    route("/helloworld/")               >=> text "hello, world",
                     route("/code/")                     >=> code Http200,
                     routep("/asdf/{test : int}/")       >=> debugAborting >=> urlParamTest,
                     routep("/asdf/{test2 : int}/")      >=> urlParamTest,
-                    routep("/asdf/{test3 : string}")    >=> wrap(proc(ctx: RouteContext): RouteResult = ctx.text(ctx.urlParams["test3"] ))
+                    routep("/asdf/{test3 : string}")    >=> wrap(proc(ctx: RouteContext): RouteResult = ctx.text(ctx.req.getUrlParam("test3") ))
                 ),
             route("/ping/") >=>
                 get                                     >=> text "pong",
+            route("/query")                             >=> queryParamtest,
+            post    >=>
+                route("/post/")                         >=> postTest,
             notfound                                    >=> notfoundHandler
         )
     var r = Router(handler: handler)
     
+
     # bind router to asynchttpserver
     proc cb(req:Request) {.async, gcsafe.} =
         await r.routing(req)

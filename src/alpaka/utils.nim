@@ -6,14 +6,6 @@ import
 import 
     core
 
-# next bind
-proc `>=>`*(h1,h2: RouteHandler): RouteHandler =
-    return proc(final: RouteFunc): RouteFunc =
-        let f2 = h2 final
-        let f1 = h1 f2
-        return proc(ctx: RouteContext): RouteResult = 
-            return f1 ctx
-
 # cacheable
 proc asCacheable*(getEtag: proc(): string, maxAge: int): RouteHandler =
     return proc(next: RouteFunc): RouteFunc =
