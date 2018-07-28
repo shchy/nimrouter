@@ -146,7 +146,6 @@ proc serveDir*(path,localPath: string, maxAge: int): RouteHandler =
                 
             let fileInfo = os.getFileInfo(localFilePath)
             let hash = md5.getMD5( localFilePath & $(fileInfo.lastWriteTime) )
-            let bindHandler = 
-                asCacheable(proc():string = hash, maxAge) >=> 
-                wrap(proc(ctx:RouteContext): RouteResult = return ctx.sendFile(localFilePath))
-            return (bindHandler next) ctx
+            if ctx.isCached(hash, maxAge):
+                return ctx.code(Http304)
+            return ctx.sendFile(localFilePath)

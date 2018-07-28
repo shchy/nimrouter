@@ -49,7 +49,7 @@ proc main() =
 
     proc sleepTest(f : RouteFunc): RouteFunc =
         return proc(ctx: RouteContext): RouteResult =
-            sleep 1000 * 1
+            sleep 1000 * 10
             return f ctx
 
     proc notfoundHandler(f: RouteFunc): RouteFunc =
@@ -81,7 +81,8 @@ proc main() =
                 choose(
                     route("/")                          >=> index,
                     route("/hello/")                    >=> asCacheable(proc():string="hello", 60)  >=> hello,
-                    route("/world/")                    >=> asCacheable(proc():string="world", 60)  >=> sleepTest   >=> world,
+                    route("/world/")                    >=> asCacheable(proc():string="world", 60)  >=> world,
+                    route("/sleep/")                    >=> asCacheable(proc():string="sleep", 60)  >=> sleepTest >=> text "wakeup",
                     route("/redirect/")                 >=> redirect "/",
                     route("/helloworld/")               >=> debugAborting >=> text "not work",
                     route("/helloworld/")               >=> text "hello, world",
@@ -100,7 +101,6 @@ proc main() =
         )
     var r = Router(handler: handler)
     
-
     # bind router to asynchttpserver
     proc cb(req:Request) {.async, gcsafe.} =
         await r.routing(req)
