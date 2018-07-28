@@ -86,6 +86,7 @@ proc main() =
             route("/query")                             >=> queryParamtest,
             post    >=>
                 route("/post/")                         >=> postTest,
+            serveDir("/static/", "./static/"),
             notfound                                    >=> notfoundHandler
         )
     var r = Router(handler: handler)

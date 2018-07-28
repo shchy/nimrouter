@@ -43,4 +43,7 @@ proc routing*(router: Router, req: Request): Future[void] =
             , ctx.res.headers
         )
     except:
+        let ex = getCurrentException()
+        let msg = getCurrentExceptionMsg()
+        echo "Exception" & repr(ex) & " message:" & msg
         return req.respond(Http500, "Internal Server Error")

@@ -1,0 +1,2 @@
+# staticFileTest
+
