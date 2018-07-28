@@ -21,10 +21,9 @@ type
     RouteFunc*      = proc (ctx:RouteContext): RouteResult
     RouteHandler*   = proc (f:RouteFunc): RouteFunc
     RouteContext*   = ref object
-        request*    : IRouteRequest
-        response*   : RouteResponse
-        urlParams*  : Table[string, string]
-    
+        req*        : RouteRequest
+        res*        : RouteResponse
+        
 # next bind
 proc `>=>`*(h1,h2: RouteHandler): RouteHandler =
     return proc(final: RouteFunc): RouteFunc =
@@ -39,22 +38,22 @@ proc final*(ctx: RouteContext): RouteResult {.procvar.} =
 
 ### context utils
 proc resp*(ctx: RouteContext, code: HttpCode, content: string): RouteResult =
-    ctx.response.code = code
-    ctx.response.body = content
+    ctx.res.code = code
+    ctx.res.body = content
     return RouteResult.find
 
 proc code*(ctx: RouteContext, code: HttpCode): RouteResult =
-    ctx.response.code = code
+    ctx.res.code = code
     return RouteResult.find
     
 proc text*(ctx: RouteContext, content: string): RouteResult =
     return ctx.resp(Http200, content)
 
 proc setHeader*(ctx: RouteContext, key, val: string): void =
-    ctx.response.headers.add(key, val)
+    ctx.res.headers.add(key, val)
 
 proc getHeader*(ctx: RouteContext, key: string): string =
-    return ctx.request.headers.getOrDefault(key)
+    return ctx.req.headers.getOrDefault(key)
 
 proc redirect*(ctx: RouteContext, path: string, code: HttpCode = Http302 ): RouteResult =
     ctx.setHeader("Location", path)

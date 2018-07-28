@@ -11,7 +11,9 @@ proc newParams*(): Params =
     )
 
 proc getParam*(prms: Params, key: string): string =
-    return prms.data.getOrDefault(key)
+    result = prms.data.getOrDefault(key)
+    if result == nil:
+        result = ""
 
 proc setParam*(prms: Params, key, value: string) =
     prms.data[key] = value

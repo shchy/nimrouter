@@ -11,36 +11,36 @@ type
     Router*     = ref object
         handler*        : RouteHandler
 
-
 # routing for request
 # asynchttpServer
 proc routing*(router: Router, req: Request): Future[void] =
-    let ctx = RouteContext(
-        request         : IRouteRequest( 
-            reqMethod   : req.reqMethod,
-            headers     : req.headers,
-            url         : req.url,
-            body        : req.body,
-            urlParams   : newParams()
-        ),
-        response        : RouteResponse(
-            code        : Http500,
-            headers     : newHttpHeaders(),
-            body        : ""
+    try:        
+        let ctx = RouteContext(
+            req             : RouteRequest( 
+                reqMethod   : req.reqMethod,
+                headers     : req.headers,
+                url         : req.url,
+                body        : req.body,
+                urlParams   : newParams()
+            ),
+            res             : RouteResponse(
+                code        : Http500,
+                headers     : newHttpHeaders(),
+                body        : ""
+            )
         )
-    )
-    var res = (router.handler final) ctx
-    
-    if res == RouteResult.none:
-        return req.respond(Http500, "Internal Server Error")
-
-    if ctx.response.body == nil:
-        ctx.response.body = ""
+        var res = (router.handler final) ctx
         
-    return req.respond(
-        ctx.response.code
-        , ctx.response.body
-        , ctx.response.headers
-    )
-    
+        if res == RouteResult.none:
+            return req.respond(Http404, "404 NotFound")
 
+        if ctx.res.body == nil:
+            ctx.res.body = ""
+            
+        return req.respond(
+            ctx.res.code
+            , ctx.res.body
+            , ctx.res.headers
+        )
+    except:
+        return req.respond(Http500, "Internal Server Error")

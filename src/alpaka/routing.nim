@@ -4,8 +4,8 @@ import
     sequtils,
     parseutils,
     tables,
-    nre, options as opt
-
+    nre, options as opt,
+    cgi
 import 
     core
 
@@ -40,15 +40,15 @@ proc chooseFuncs(funcs:seq[RouteFunc]): RouteFunc =
         if funcs.len == 0:
             return abort
         
-        let tempResponse = ctx.response.backup()
-        let tempUrlParams = ctx.request.urlParams.clone()
+        let tempResponse = ctx.res.backup()
+        let tempUrlParams = ctx.req.urlParams.clone()
         let res = funcs[0] ctx
         if res != abort:
             return res
         
         # reset response
-        ctx.response = tempResponse
-        ctx.request.urlParams = tempUrlParams
+        ctx.res = tempResponse
+        ctx.req.urlParams = tempUrlParams
         
         # find other
         let f = chooseFuncs funcs[1..funcs.len-1]
@@ -77,19 +77,19 @@ proc filter*(isMatch:proc(ctx:RouteContext): bool): RouteHandler =
 let notfound*    = filter(proc(ctx: RouteContext): bool = true)
 
 # httpmethod filter
-let head*   = filter(proc(ctx:RouteContext):bool = ctx.request.reqMethod == HttpHead)
-let get*    = filter(proc(ctx:RouteContext):bool = ctx.request.reqMethod == HttpGet)
-let post*   = filter(proc(ctx:RouteContext):bool = ctx.request.reqMethod == HttpPost)
-let put*    = filter(proc(ctx:RouteContext):bool = ctx.request.reqMethod == HttpPut)
-let delete* = filter(proc(ctx:RouteContext):bool = ctx.request.reqMethod == HttpDelete)
-let patch*  = filter(proc(ctx:RouteContext):bool = ctx.request.reqMethod == HttpPatch)
-let trace*  = filter(proc(ctx:RouteContext):bool = ctx.request.reqMethod == HttpTrace)
-let options*   = filter(proc(ctx:RouteContext):bool = ctx.request.reqMethod == HttpOptions)
-let connect*   = filter(proc(ctx:RouteContext):bool = ctx.request.reqMethod == HttpConnect)
+let head*   = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpHead)
+let get*    = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpGet)
+let post*   = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpPost)
+let put*    = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpPut)
+let delete* = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpDelete)
+let patch*  = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpPatch)
+let trace*  = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpTrace)
+let options*   = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpOptions)
+let connect*   = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpConnect)
 
 # path filter
 proc route*(path: string): RouteHandler =
-    return filter(proc(ctx: RouteContext): bool = ctx.request.url.path == path )
+    return filter(proc(ctx: RouteContext): bool = ctx.req.url.path == path )
 
 const urlParamRegex = r"{\s?(\w+?)\s?:\s?(int|string|float)\s?}"
 # path filter with url parameter
@@ -101,7 +101,7 @@ proc routep*(path: string): RouteHandler =
 
     return proc(next: RouteFunc): RouteFunc =
         return proc(ctx: RouteContext): RouteResult =
-            let segemnts = ctx.request.url.path.split("/")
+            let segemnts = ctx.req.url.path.split("/")
             if expectedSegments.len() != segemnts.len():
                 return abort
                 
@@ -138,10 +138,9 @@ proc routep*(path: string): RouteHandler =
                             discard
                         else: 
                             return abort    
-                    ctx.request.urlParams.setParam(name, segment)
+                    ctx.req.urlParams.setParam(decodeUrl name, decodeUrl segment)
                 except:
                     return abort
-            
             return next ctx
 
 
