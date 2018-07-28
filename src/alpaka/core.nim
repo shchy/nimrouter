@@ -18,12 +18,13 @@ export
 type
     RouteResult*    = enum 
         none, find 
-    RouteFunc*      = proc (ctx:RouteContext): RouteResult
-    RouteHandler*   = proc (f:RouteFunc): RouteFunc
-    RouteContext*   = ref object
-        req*            : RouteRequest
-        res*            : RouteResponse
-        subRouteContext*   : string
+    RouteFunc*                  = proc (ctx:RouteContext): RouteResult
+    RouteHandler*   {.gcsafe.}  = proc (f:RouteFunc): RouteFunc
+    RouteContext*   {.gcsafe.}  = ref object
+        req*                : RouteRequest
+        res*                : RouteResponse
+        subRouteContext*    : string
+    ErrorHandler*  {.gcsafe.} = proc (ex: ref Exception): RouteHandler {.gcsafe.}
         
 let mimeDB = newMimetypes()
 # 

@@ -74,10 +74,16 @@ proc main() =
 
     let debugAborting = filter(proc(ctx: RouteContext): bool = false)
 
+    let errorHandler = 
+        proc(ex: ref Exception): RouteHandler =
+            return proc(next: RouteFunc): RouteFunc =
+                return proc(ctx: RouteContext): RouteResult =
+                    return ctx.resp( Http500, "Exception!")
+
     # setting route
     var handler = 
         choose(
-            get     >=> setHeader >=>
+            GET     >=> setHeader >=>
                 choose(
                     route("/")                          >=> index,
                     route("/hello/")                    >=> asCacheable(proc():string="hello", 60)  >=> hello,
@@ -92,12 +98,12 @@ proc main() =
                     routep("/asdf/{test3 : string}")    >=> wrap(proc(ctx: RouteContext): RouteResult = ctx.text(ctx.req.getUrlParam("test3") ))
                 ),
             route("/ping/") >=>
-                get                                     >=> text "pong",
+                GET                                     >=> text "pong",
             route("/query")                             >=> queryParamtest,
-            post    >=>
+            POST    >=>
                 route("/post/")                         >=> postTest,
             # static file serve
-            serveDir("/static/", "./static/", 60),
+            GET                                         >=> serveDir("/static/", "./static/", 60),
             # sub module
             subRoute("/sub",[
                 route("/abc/")                          >=> text "sub Route"
@@ -109,13 +115,16 @@ proc main() =
                     routep("/{aaa : int}")              >=> wrap(proc(ctx: RouteContext): RouteResult = ctx.text( ctx.req.getUrlParam("aaa") ) )
                 ])
             ]),
-            notfound                                    >=> notfoundHandler
+            route("/error/")                            >=> wrap(proc(ctx:RouteContext): RouteResult = raise newException(Exception, "testException")),
+            NOTFOUND                                    >=> notfoundHandler
         )
-
-    var r = Router(handler: handler)
+    var r = Router(
+        handler         : handler,
+        errorHandler    : errorHandler
+    )
     
     # bind router to asynchttpserver
-    proc cb(req:Request) {.async, gcsafe.} =
+    proc cb(req:Request) {.async.} =
         await r.routing(req)
 
     let server = newAsyncHttpServer(true, true)

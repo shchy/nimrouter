@@ -64,18 +64,18 @@ proc filter*(isMatch:proc(ctx:RouteContext): bool): RouteHandler =
                 return abort
 
 # all
-let notfound*   = filter(proc(ctx: RouteContext): bool = true)
+let NOTFOUND*   = filter(proc(ctx: RouteContext): bool = true)
 
 # httpmethod filter
-let head*       = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpHead)
-let get*        = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpGet)
-let post*       = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpPost)
-let put*        = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpPut)
-let delete*     = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpDelete)
-let patch*      = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpPatch)
-let trace*      = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpTrace)
-let options*    = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpOptions)
-let connect*    = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpConnect)
+let HEAD*       = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpHead)
+let GET*        = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpGet)
+let POST*       = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpPost)
+let PUT*        = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpPut)
+let DELETE*     = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpDelete)
+let PATCH*      = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpPatch)
+let TRACE*      = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpTrace)
+let OPTIONS*    = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpOptions)
+let CONNECT*    = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpConnect)
 
 # path filter
 proc route*(path: string): RouteHandler =
