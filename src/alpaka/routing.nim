@@ -5,9 +5,11 @@ import
     parseutils,
     tables,
     nre, options as opt,
-    cgi
+    cgi,
+    os, uri, md5, times
 import 
-    core
+    core,
+    utils
 
 # varargs to seq
 proc `@`[T](xs:openArray[T]): seq[T] = 
@@ -16,31 +18,13 @@ proc `@`[T](xs:openArray[T]): seq[T] =
         s.add x
     return s
 
-# backup responce
-proc backup(res: RouteResponse): RouteResponse =
-    let code = res.code
-    let body = res.body
-    let headers = newHttpHeaders()
-
-    for key in res.headers.table.keys:
-        for val in res.headers.table[key]:
-            headers.add(key, val)
-    return RouteResponse(
-        code: code,
-        body: body,
-        headers: headers
-    )
-
-# 
-let abort* = RouteResult.none
-
 # choose func until not abort
 proc chooseFuncs(funcs:seq[RouteFunc]): RouteFunc = 
     return proc(ctx: RouteContext): RouteResult =
         if funcs.len == 0:
             return abort
         
-        let tempResponse = ctx.res.backup()
+        let tempResponse = ctx.res.clone()
         let tempUrlParams = ctx.req.urlParams.clone()
         let res = funcs[0] ctx
         if res != abort:
@@ -74,18 +58,18 @@ proc filter*(isMatch:proc(ctx:RouteContext): bool): RouteHandler =
                 return abort
 
 # all
-let notfound*    = filter(proc(ctx: RouteContext): bool = true)
+let notfound*   = filter(proc(ctx: RouteContext): bool = true)
 
 # httpmethod filter
-let head*   = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpHead)
-let get*    = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpGet)
-let post*   = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpPost)
-let put*    = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpPut)
-let delete* = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpDelete)
-let patch*  = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpPatch)
-let trace*  = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpTrace)
-let options*   = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpOptions)
-let connect*   = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpConnect)
+let head*       = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpHead)
+let get*        = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpGet)
+let post*       = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpPost)
+let put*        = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpPut)
+let delete*     = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpDelete)
+let patch*      = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpPatch)
+let trace*      = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpTrace)
+let options*    = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpOptions)
+let connect*    = filter(proc(ctx:RouteContext):bool = ctx.req.reqMethod == HttpConnect)
 
 # path filter
 proc route*(path: string): RouteHandler =
@@ -142,5 +126,27 @@ proc routep*(path: string): RouteHandler =
                 except:
                     return abort
             return next ctx
-
-
+            
+proc serveDir*(path,localPath: string, maxAge: int): RouteHandler =
+    # todo path must be terminate "/"
+    var localPath = localPath
+    if not localPath.isAbsolute():
+        localPath = $(parseUri(getAppDir()) / localPath.replace("./","") )
+    return proc(next: RouteFunc): RouteFunc =
+        return proc(ctx: RouteContext): RouteResult =
+            if not ctx.req.url.path.startsWith(path):
+                return abort
+            
+            let reqFilePath = 
+                ctx.req.url.path[path.len()..ctx.req.url.path.len()-1]
+            let localFilePath = joinPath(localPath, reqFilePath)
+            
+            if not existsFile localFilePath:
+                return abort
+                
+            let fileInfo = os.getFileInfo(localFilePath)
+            let hash = md5.getMD5( localFilePath & $(fileInfo.lastWriteTime) )
+            let bindHandler = 
+                asCacheable(proc():string = hash, maxAge) >=> 
+                wrap(proc(ctx:RouteContext): RouteResult = return ctx.sendFile(localFilePath))
+            return (bindHandler next) ctx

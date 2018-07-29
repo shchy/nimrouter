@@ -30,12 +30,21 @@ proc main() =
                 name,
                 sex 
             )
+    proc hello(next: RouteFunc): RouteFunc =
+        return proc(ctx: RouteContext): RouteResult =
+            echo "hello"
+            return ctx.text html(
+                h1 "hello",
+                a(href="/world/", "world")
+            )
 
     proc world(f: RouteFunc): RouteFunc =
         return proc(ctx: RouteContext): RouteResult =
+            echo "world"
             return ctx.text html(
                     h1 "world",
-                    a(href="/test/", "test")
+                    a(href="/hello/", "hello"),
+                    img(src="/static/sample.jpg", alt="alt")
                 )
 
     proc sleepTest(f : RouteFunc): RouteFunc =
@@ -68,11 +77,11 @@ proc main() =
     # setting route
     var handler = 
         choose(
-            get     >=> setHeader   >=>
+            get     >=> setHeader >=>
                 choose(
                     route("/")                          >=> index,
-                    route("/hello")                     >=> asCacheable(proc():string="world", 60 * 5)  >=> text "hello",
-                    route("/world/")                    >=> asCacheable(proc():string="sleep", 60 * 5)  >=> sleepTest   >=> world,
+                    route("/hello/")                    >=> asCacheable(proc():string="hello", 60)  >=> hello,
+                    route("/world/")                    >=> asCacheable(proc():string="world", 60)  >=> sleepTest   >=> world,
                     route("/redirect/")                 >=> redirect "/",
                     route("/helloworld/")               >=> debugAborting >=> text "not work",
                     route("/helloworld/")               >=> text "hello, world",
@@ -86,6 +95,7 @@ proc main() =
             route("/query")                             >=> queryParamtest,
             post    >=>
                 route("/post/")                         >=> postTest,
+            serveDir("/static/", "./static/", 60),
             notfound                                    >=> notfoundHandler
         )
     var r = Router(handler: handler)
