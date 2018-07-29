@@ -8,6 +8,7 @@ license       = "MIT"
 # Dependencies
 
 requires "nim >= 0.16.0"
+requires "emerald >= 0.2.2"
 
 srcDir        = "src"
 binDir        = "bin"

@@ -10,12 +10,24 @@ import
     modules/index
 
 proc main() =
+    proc debugAuth(id,pass:string) : AuthedUser =
+        let isOK = id == "testa" and pass == "test"
+        if not isOK:
+            return nil
+        var user = AuthedUser(
+            id  : id,
+            name: id,
+            role: @[]
+        )
+        return user
+
     var r = Router(
         handler         : choose(
             subRoute("/", index.handlers),
             GET >=> serveDir("/static/", "./static/", 60 * 60 * 24 * 7)
         )
-    )
+    ).useBasicAuth(debugAuth, "must be signin")
+    
     # bind router to asynchttpserver
     proc cb(req:Request) {.async.} =
         await r.routing(req)

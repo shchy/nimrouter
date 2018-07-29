@@ -11,11 +11,6 @@ import
 import
     core
 
-type
-    Router*     = ref object
-        handler*        : RouteHandler
-        errorHandler*   : ErrorHandler
-
 const FILE_READ_BUFFER_SIZE: int = 1024 * 1024 * 16
 
 proc sendFile(req: Request, code: HttpCode, headers: HttpHeaders, filePath: string) {.async.} =
@@ -56,7 +51,11 @@ proc bindContextToResponse(req: Request, ctx: RouteContext): Future[void] {.gcsa
 # routing for request
 # asynchttpServer
 proc routing*(router: Router, req: Request): Future[void] {.gcsafe.} =
-       
+    if router.mustBeAuth == nil:
+        router.mustBeAuth = through
+    if router.middleware == nil:
+        router.middleware = through
+        
     let ctx = RouteContext(
         req             : RouteRequest( 
             reqMethod   : req.reqMethod,
@@ -70,14 +69,16 @@ proc routing*(router: Router, req: Request): Future[void] {.gcsafe.} =
             headers     : newHttpHeaders(),
             body        : ""
         ),
-        subRouteContext : ""
+        subRouteContext : "",
+        mustBeAuth      : router.mustBeAuth
     )
     var errorHandler = router.errorHandler
     if errorHandler == nil:
         errorHandler = defaultErrorHandler
 
     try:
-        let res = (router.handler final) ctx
+        let handler = router.middleware >=> router.handler
+        let res = (handler final) ctx
         if res == RouteResult.none:
             return req.respond(Http404, "404 NotFound")
         return req.bindContextToResponse(ctx)

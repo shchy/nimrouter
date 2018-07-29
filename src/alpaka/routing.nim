@@ -18,10 +18,6 @@ proc `@`[T](xs:openArray[T]): seq[T] =
         s.add x
     return s
 
-proc through(next: RouteFunc): RouteFunc =
-    return proc(ctx: RouteContext): RouteResult =
-        return next ctx
-
 # choose func until not abort
 proc chooseFuncs(funcs:seq[RouteFunc]): RouteFunc = 
     return proc(ctx: RouteContext): RouteResult =
