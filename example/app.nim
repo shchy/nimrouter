@@ -96,9 +96,22 @@ proc main() =
             route("/query")                             >=> queryParamtest,
             post    >=>
                 route("/post/")                         >=> postTest,
+            # static file serve
             serveDir("/static/", "./static/", 60),
+            # sub module
+            subRoute("/sub",[
+                route("/abc/")                          >=> text "sub Route"
+            ]),
+            subRoute("/sub/",[ 
+                route("/test/")                         >=> text "test",
+                subRoute("/sub3/",[ 
+                    route("/")                          >=> text "sub3",
+                    routep("/{aaa : int}")              >=> wrap(proc(ctx: RouteContext): RouteResult = ctx.text( ctx.req.getUrlParam("aaa") ) )
+                ])
+            ]),
             notfound                                    >=> notfoundHandler
         )
+
     var r = Router(handler: handler)
     
     # bind router to asynchttpserver

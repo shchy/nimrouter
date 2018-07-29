@@ -21,8 +21,9 @@ type
     RouteFunc*      = proc (ctx:RouteContext): RouteResult
     RouteHandler*   = proc (f:RouteFunc): RouteFunc
     RouteContext*   = ref object
-        req*        : RouteRequest
-        res*        : RouteResponse
+        req*            : RouteRequest
+        res*            : RouteResponse
+        subRouteContext*   : string
         
 let mimeDB = newMimetypes()
 # 
@@ -80,3 +81,10 @@ proc sendfile*(ctx: RouteContext, filePath: string): RouteResult =
     ctx.res.code = Http200
     return RouteResult.find
 
+proc withSubRoute*(ctx: RouteContext, path: string): string =
+    if strutils.isNilOrWhitespace ctx.subRouteContext:
+        return path
+    return ctx.subRouteContext.joinPath path
+proc updateSubRoute*(ctx: RouteContext, path: string) =
+    ctx.subRouteContext = ctx.withSubRoute path
+        

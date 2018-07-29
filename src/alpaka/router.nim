@@ -48,7 +48,8 @@ proc routing*(router: Router, req: Request): Future[void] =
                 code        : Http500,
                 headers     : newHttpHeaders(),
                 body        : ""
-            )
+            ),
+            subRouteContext : ""
         )
         var res = (router.handler final) ctx
         
