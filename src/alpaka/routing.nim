@@ -140,9 +140,12 @@ proc serveDir*(path,localPath: string, maxAge: int): RouteHandler =
                 return abort
             
             let reqFilePath = 
-                ctx.req.url.path[routePath.len()..ctx.req.url.path.len()-1]
+                decodeUrl ctx.req.url.path[routePath.len()..ctx.req.url.path.len()-1]
             let localFilePath = joinPath(localPath, reqFilePath)
             
+            if not localFilePath.startsWith localPath:
+                return ctx.code Http403
+
             if not existsFile localFilePath:
                 return abort
                 

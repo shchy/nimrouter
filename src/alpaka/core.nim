@@ -58,10 +58,15 @@ proc code*(ctx: RouteContext, code: HttpCode): RouteResult =
     return RouteResult.find
     
 proc text*(ctx: RouteContext, content: string): RouteResult =
-    var mime = mimeDB.getMimeType("html")
+    var mime = mimeDB.getMimeType("text")
     ctx.setHeader("Content-Type", mime)
     return ctx.resp(Http200, content)
 
+proc html*(ctx: RouteContext, content: string): RouteResult =
+    var mime = mimeDB.getMimeType("html")
+    ctx.setHeader("Content-Type", mime)
+    return ctx.resp(Http200, content)
+    
 proc redirect*(ctx: RouteContext, path: string, code: HttpCode = Http302 ): RouteResult =
     ctx.setHeader("Location", path)
     return ctx.code code
