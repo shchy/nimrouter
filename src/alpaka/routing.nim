@@ -18,6 +18,10 @@ proc `@`[T](xs:openArray[T]): seq[T] =
         s.add x
     return s
 
+proc through(next: RouteFunc): RouteFunc =
+    return proc(ctx: RouteContext): RouteResult =
+        return next ctx
+
 # choose func until not abort
 proc chooseFuncs(funcs:seq[RouteFunc]): RouteFunc = 
     return proc(ctx: RouteContext): RouteResult =
@@ -157,14 +161,18 @@ proc serveDir*(path,localPath: string, maxAge: int): RouteHandler =
 
 proc subRoute*(path: string, handlers: openarray[RouteHandler]): RouteHandler =
     let hs = @handlers
+    var handler : RouteHandler
+    if hs.len() == 0:
+        handler = through
+    elif hs.len() == 1:
+        handler = hs[0]
+    else:
+        handler = choose(hs)
+
     return proc(next: RouteFunc): RouteFunc =
         return proc(ctx: RouteContext): RouteResult =
             if not ctx.req.url.path.startsWith(ctx.withSubRoute path):
                 return abort
             ctx.updateSubRoute path
-            if hs.len() == 0:
-                return next ctx
-                
-            let handler = choose(hs)
             let f = handler next
             return f ctx
