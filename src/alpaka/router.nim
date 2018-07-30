@@ -14,6 +14,7 @@ import
 type
     Router*     = ref object
         handler*        : RouteHandler
+        errorHandler*   : ErrorHandler
 
 const FILE_READ_BUFFER_SIZE: int = 1024 * 1024 * 16
 
@@ -32,43 +33,67 @@ proc sendFile(req: Request, code: HttpCode, headers: HttpHeaders, filePath: stri
         await req.client.send(bp, readedsize)
     file.close()
 
+
+proc defaultErrorHandler(ex: ref Exception): RouteHandler =
+    return proc(next: RouteFunc): RouteFunc =
+        return proc(ctx: RouteContext): RouteResult =
+            return ctx.resp(Http500, "Internal Server Error")
+
+proc bindContextToResponse(req: Request, ctx: RouteContext): Future[void] {.gcsafe.} =
+    
+    if existsFile ctx.res.contentFilePath:
+        return sendFile(req, ctx.res.code, ctx.res.headers, ctx.res.contentFilePath)
+    
+    if ctx.res.body == nil:
+        ctx.res.body = ""
+    
+    return req.respond(
+        ctx.res.code
+        , ctx.res.body
+        , ctx.res.headers
+    )
+
 # routing for request
 # asynchttpServer
-proc routing*(router: Router, req: Request): Future[void] =
-    try:        
-        let ctx = RouteContext(
-            req             : RouteRequest( 
-                reqMethod   : req.reqMethod,
-                headers     : req.headers,
-                url         : req.url,
-                body        : req.body,
-                urlParams   : newParams()
-            ),
-            res             : RouteResponse(
-                code        : Http500,
-                headers     : newHttpHeaders(),
-                body        : ""
-            ),
-            subRouteContext : ""
-        )
-        var res = (router.handler final) ctx
-        
+proc routing*(router: Router, req: Request): Future[void] {.gcsafe.} =
+       
+    let ctx = RouteContext(
+        req             : RouteRequest( 
+            reqMethod   : req.reqMethod,
+            headers     : req.headers,
+            url         : req.url,
+            body        : req.body,
+            urlParams   : newParams()
+        ),
+        res             : RouteResponse(
+            code        : Http500,
+            headers     : newHttpHeaders(),
+            body        : ""
+        ),
+        subRouteContext : ""
+    )
+    var errorHandler = router.errorHandler
+    if errorHandler == nil:
+        errorHandler = defaultErrorHandler
+
+    try:
+        let res = (router.handler final) ctx
         if res == RouteResult.none:
             return req.respond(Http404, "404 NotFound")
-
-        if existsFile ctx.res.contentFilePath:
-            return sendFile(req, ctx.res.code, ctx.res.headers, ctx.res.contentFilePath)
-            
-        if ctx.res.body == nil:
-            ctx.res.body = ""
-        
-        return req.respond(
-            ctx.res.code
-            , ctx.res.body
-            , ctx.res.headers
-        )
+        return req.bindContextToResponse(ctx)
     except:
         let ex = getCurrentException()
         let msg = getCurrentExceptionMsg()
         echo "Exception" & repr(ex) & " message:" & msg
-        return req.respond(Http500, "Internal Server Error")
+
+        if errorHandler == nil:
+            return req.respond(Http500, "Internal Server Error")
+        let handler = errorHandler ex
+        let res = (handler final) ctx
+        if res == RouteResult.none:
+            return req.respond(Http500, "Internal Server Error")
+              
+        return req.bindContextToResponse(ctx)
+
+
+    

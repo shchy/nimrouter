@@ -21,4 +21,4 @@ task clean, "clean":
 task run, "exec":
     exec "rm -f ./example/app"
     exec "nimble install -y"
-    exec "nim c -r -d:release --threads:on ./example/app.nim"
+    exec "nim c -r -d:release ./example/app.nim"
