@@ -12,7 +12,7 @@ proc main() =
     # handlers
     proc index(f: RouteFunc): RouteFunc =
         return proc(ctx: RouteContext) : RouteResult =
-            return ctx.text html(
+            return ctx.html html(
                 h1 "index",
                 form(action="/post/", `method`="POST",
                     input(`type`="text", name="name"),
@@ -26,14 +26,14 @@ proc main() =
         return proc(ctx: RouteContext): RouteResult =
             let name = ctx.req.getFormParam "name"
             let sex = ctx.req.getFormParam "sex"
-            return ctx.text html(
+            return ctx.html html(
                 name,
                 sex 
             )
     proc hello(next: RouteFunc): RouteFunc =
         return proc(ctx: RouteContext): RouteResult =
             echo "hello"
-            return ctx.text html(
+            return ctx.html html(
                 h1 "hello",
                 a(href="/world/", "world")
             )
@@ -41,7 +41,7 @@ proc main() =
     proc world(f: RouteFunc): RouteFunc =
         return proc(ctx: RouteContext): RouteResult =
             echo "world"
-            return ctx.text html(
+            return ctx.html html(
                     h1 "world",
                     a(href="/hello/", "hello"),
                     img(src="/static/sample.jpg", alt="alt")

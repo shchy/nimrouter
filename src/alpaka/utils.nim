@@ -34,6 +34,9 @@ proc code*(code: HttpCode): RouteHandler =
 proc text*(content: string): RouteHandler =
     return wrap(proc(ctx: RouteContext): RouteResult = ctx.text content)
 
+proc html*(content: string): RouteHandler =
+    return wrap(proc(ctx: RouteContext): RouteResult = ctx.html content)
+    
 proc redirect*(location: string, code: HttpCode = Http302): RouteHandler =
     return wrap(proc(ctx: RouteContext): RouteResult = ctx.redirect(location, code))
 
