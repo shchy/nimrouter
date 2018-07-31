@@ -21,7 +21,6 @@ proc asCacheable*(getEtag: proc(): string, maxAge: int): RouteHandler =
                 return ctx.resp(Http304, "Not Modified")
             return next ctx
 
-
 # not next wrapper
 proc wrap*(lastFunc: RouteFunc): Routehandler =
     return proc(_: RouteFunc): RouteFunc =
@@ -40,4 +39,6 @@ proc html*(content: string): RouteHandler =
 proc redirect*(location: string, code: HttpCode = Http302): RouteHandler =
     return wrap(proc(ctx: RouteContext): RouteResult = ctx.redirect(location, code))
 
-
+proc mustBeAuth*(next: RouteFunc): RouteFunc {.procvar.} =
+    return proc(ctx: RouteContext): RouteResult =
+        return (ctx.mustBeAuth next) ctx

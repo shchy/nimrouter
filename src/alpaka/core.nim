@@ -9,26 +9,23 @@ import
 import
     request,
     response,
-    params
+    params,
+    types
+    
 export
     request,
     response,
-    params
+    params,
+    types
+    
 
-type
-    RouteResult*    = enum 
-        none, find 
-    RouteFunc*                  = proc (ctx:RouteContext): RouteResult
-    RouteHandler*   {.gcsafe.}  = proc (f:RouteFunc): RouteFunc
-    RouteContext*   {.gcsafe.}  = ref object
-        req*                : RouteRequest
-        res*                : RouteResponse
-        subRouteContext*    : string
-    ErrorHandler*  {.gcsafe.} = proc (ex: ref Exception): RouteHandler {.gcsafe.}
-        
 let mimeDB = newMimetypes()
 # 
 let abort* = RouteResult.none
+
+proc through*(next: RouteFunc): RouteFunc {.procvar.} =
+    return proc(ctx: RouteContext): RouteResult =
+        return next ctx
 
 # next bind
 proc `>=>`*(h1,h2: RouteHandler): RouteHandler =

@@ -1,4 +1,4 @@
-*/nimcache
+**/nimcache
 nimsuggest.log
 bin/
-example/app
+example/*/app

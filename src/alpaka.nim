@@ -1,12 +1,18 @@
+import
+    httpcore
 import 
     alpaka/core,
     alpaka/utils,
     alpaka/routing,
     alpaka/router,
-    alpaka/params
+    alpaka/params,
+    alpaka/basicauth
+
 
 export
+    httpcore,
     core,
     router,
     utils,
-    routing
+    routing,
+    basicauth
