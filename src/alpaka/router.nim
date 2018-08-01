@@ -51,8 +51,6 @@ proc bindContextToResponse(req: Request, ctx: RouteContext): Future[void] {.gcsa
 # routing for request
 # asynchttpServer
 proc routing*(router: Router, req: Request): Future[void] {.gcsafe.} =
-    if router.mustBeAuth == nil:
-        router.mustBeAuth = through
     if router.middleware == nil:
         router.middleware = through
         
@@ -70,7 +68,7 @@ proc routing*(router: Router, req: Request): Future[void] {.gcsafe.} =
             body        : ""
         ),
         subRouteContext : "",
-        mustBeAuth      : router.mustBeAuth
+        config          : router.config,
     )
     var errorHandler = router.errorHandler
     if errorHandler == nil:

@@ -41,4 +41,4 @@ proc redirect*(location: string, code: HttpCode = Http302): RouteHandler =
 
 proc mustBeAuth*(next: RouteFunc): RouteFunc {.procvar.} =
     return proc(ctx: RouteContext): RouteResult =
-        return (ctx.mustBeAuth next) ctx
+        return (ctx.config.mustBeAuth next) ctx
