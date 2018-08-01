@@ -5,9 +5,8 @@ import
     strutils,
     base64
 
-proc home(next: RouteFunc): RouteFunc =
-    return proc(ctx: RouteContext): RouteResult =
-        return ctx.html homeView(ctx.user.name)
+let home = handler(ctx) do:
+    return ctx.html homeView(ctx.user.name)
 
 let handlers* = [
     GET     >=> 

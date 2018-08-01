@@ -10,75 +10,64 @@ import
 
 proc main() =
     # handlers
-    proc index(f: RouteFunc): RouteFunc =
-        return proc(ctx: RouteContext) : RouteResult =
-            return ctx.html html(
-                h1 "index",
-                form(action="/post/", `method`="POST",
-                    input(`type`="text", name="name"),
-                    input(`type`="radio", name="sex", value="male"),
-                    input(`type`="radio", name="sex", value="female"),
-                    input(`type`="submit", value="send")
-                )
-                #a(href="/", "root")
+    let index = handler(ctx) do:
+        return ctx.html html(
+            h1 "index",
+            form(action="/post/", `method`="POST",
+                input(`type`="text", name="name"),
+                input(`type`="radio", name="sex", value="male"),
+                input(`type`="radio", name="sex", value="female"),
+                input(`type`="submit", value="send")
             )
-    proc postTest(next: RouteFunc): RouteFunc =
-        return proc(ctx: RouteContext): RouteResult =
-            let name = ctx.req.getFormParam "name"
-            let sex = ctx.req.getFormParam "sex"
-            return ctx.html html(
-                name,
-                sex 
+            #a(href="/", "root")
+        )
+    let postTest = handler(ctx) do:
+        let name = ctx.req.getFormParam "name"
+        let sex = ctx.req.getFormParam "sex"
+        return ctx.html html(
+            name,
+            sex 
+        )
+    let hello = handler(ctx) do:
+        echo "hello"
+        return ctx.html html(
+            h1 "hello",
+            a(href="/world/", "world")
+        )
+
+    let world = handler(ctx) do:
+        echo "world"
+        return ctx.html html(
+                h1 "world",
+                a(href="/hello/", "hello"),
+                img(src="/static/sample.jpg", alt="alt")
             )
-    proc hello(next: RouteFunc): RouteFunc =
-        return proc(ctx: RouteContext): RouteResult =
-            echo "hello"
-            return ctx.html html(
-                h1 "hello",
-                a(href="/world/", "world")
-            )
 
-    proc world(f: RouteFunc): RouteFunc =
-        return proc(ctx: RouteContext): RouteResult =
-            echo "world"
-            return ctx.html html(
-                    h1 "world",
-                    a(href="/hello/", "hello"),
-                    img(src="/static/sample.jpg", alt="alt")
-                )
+    let sleepTest = handler(ctx, next) do:
+        sleep 1000 * 10
+        return next ctx
 
-    proc sleepTest(f : RouteFunc): RouteFunc =
-        return proc(ctx: RouteContext): RouteResult =
-            sleep 1000 * 10
-            return f ctx
+    let notfoundHandler = handler(ctx) do:
+        return ctx.resp(Http404, h1 "404")
 
-    proc notfoundHandler(f: RouteFunc): RouteFunc =
-        return proc(ctx: RouteContext) : RouteResult =
-            return ctx.resp(Http404, h1 "404")
-
-    proc setHeader(next: RouteFunc): RouteFunc =
-        return proc(ctx: RouteContext): RouteResult =
-            ctx.setHeader("test", "test")
-            return next ctx
+    let setHeader = handler(ctx, next) do:
+        ctx.setHeader("test", "test")
+        return next ctx
     
-    proc urlParamTest(next: RouteFunc): RouteFunc =
-        return proc(ctx: RouteContext): RouteResult =
-            return ctx.text(ctx.req.getUrlParam("test"))
+    let urlParamTest = handler(ctx) do:
+        return ctx.text(ctx.req.getUrlParam("test"))
 
-    proc queryParamtest(next: RouteFunc): RouteFunc =
-        return proc(ctx: RouteContext): RouteResult =
-            let p1 = ctx.req.getQueryParam "p1"
-            let p2 = ctx.req.getQueryParam "p2"
-            return ctx.text p1 & "&" & p2
+    let queryParamtest = handler(ctx) do:
+        let p1 = ctx.req.getQueryParam "p1"
+        let p2 = ctx.req.getQueryParam "p2"
+        return ctx.text p1 & "&" & p2
 
 
     let debugAborting = filter(proc(ctx: RouteContext): bool = false)
 
     let errorHandler = 
         proc(ex: ref Exception): RouteHandler =
-            return proc(next: RouteFunc): RouteFunc =
-                return proc(ctx: RouteContext): RouteResult =
-                    return ctx.resp( Http500, "Exception!")
+            handler(ctx) do: return ctx.resp( Http500, "Exception!")
 
     # setting route
     var handler = 
@@ -95,7 +84,7 @@ proc main() =
                     route("/code/")                     >=> code Http200,
                     routep("/asdf/{test : int}/")       >=> debugAborting >=> urlParamTest,
                     routep("/asdf/{test2 : int}/")      >=> urlParamTest,
-                    routep("/asdf/{test3 : string}")    >=> wrap(proc(ctx: RouteContext): RouteResult = ctx.text(ctx.req.getUrlParam("test3") ))
+                    routep("/asdf/{test3 : string}")    >=> handler(ctx) do: return ctx.text(ctx.req.getUrlParam("test3")) 
                 ),
             route("/ping/") >=>
                 GET                                     >=> text "pong",

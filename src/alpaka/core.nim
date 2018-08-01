@@ -23,9 +23,31 @@ let mimeDB = newMimetypes()
 # 
 let abort* = RouteResult.none
 
-proc through*(next: RouteFunc): RouteFunc {.procvar.} =
-    return proc(ctx: RouteContext): RouteResult =
-        return next ctx
+template handler*(c, f, actions:untyped): untyped =
+    var result = 
+        proc (next: RouteFunc): RouteFunc =
+            var f = next
+            return proc(ctx: RouteContext): RouteResult =
+                var c = ctx
+                actions
+    result
+
+template handler*(c, actions:untyped): untyped =
+    var result = 
+        proc (next: RouteFunc): RouteFunc =
+            return proc(ctx: RouteContext): RouteResult =
+                var c = ctx
+                actions
+    result
+
+template rf*(c, actions: untyped): untyped =
+    var result = 
+        proc(ctx: RouteContext): untyped =
+            var c = ctx
+            actions
+    result
+    
+let through* = handler(c,n) do:return n c
 
 # next bind
 proc `>=>`*(h1,h2: RouteHandler): RouteHandler =
@@ -36,9 +58,6 @@ proc `>=>`*(h1,h2: RouteHandler): RouteHandler =
             return f1 ctx
 
 # end of handler
-proc final*(ctx: RouteContext): RouteResult {.procvar.} =
-    return RouteResult.find
-
 proc setHeader*(ctx: RouteContext, key, val: string): void =
     ctx.res.headers.add(key, val)
 

@@ -11,6 +11,9 @@ import
 import
     core
 
+proc final*(ctx: RouteContext): RouteResult {.procvar.} =
+    return RouteResult.find
+    
 const FILE_READ_BUFFER_SIZE: int = 1024 * 1024 * 16
 
 proc sendFile(req: Request, code: HttpCode, headers: HttpHeaders, filePath: string) {.async.} =
@@ -30,9 +33,7 @@ proc sendFile(req: Request, code: HttpCode, headers: HttpHeaders, filePath: stri
 
 
 proc defaultErrorHandler(ex: ref Exception): RouteHandler =
-    return proc(next: RouteFunc): RouteFunc =
-        return proc(ctx: RouteContext): RouteResult =
-            return ctx.resp(Http500, "Internal Server Error")
+    handler(ctx) do: return ctx.resp(Http500, "Internal Server Error")
 
 proc bindContextToResponse(req: Request, ctx: RouteContext): Future[void] {.gcsafe.} =
     

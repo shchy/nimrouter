@@ -14,31 +14,27 @@ proc isCached*(ctx: RouteContext, etag: string, maxAge: int): bool =
     return etagInHeader.contains(etag)
 
 proc asCacheable*(getEtag: proc(): string, maxAge: int): RouteHandler =
-    return proc(next: RouteFunc): RouteFunc =
-        return proc(ctx: RouteContext): RouteResult =
-            let etag = getEtag()
-            if ctx.isCached(etag, maxAge):
-                return ctx.resp(Http304, "Not Modified")
-            return next ctx
+    handler(ctx, next) do:
+        let etag = getEtag()
+        if ctx.isCached(etag, maxAge):
+            return ctx.resp(Http304, "Not Modified")
+        return next ctx
 
 # not next wrapper
 proc wrap*(lastFunc: RouteFunc): Routehandler =
-    return proc(_: RouteFunc): RouteFunc =
-        return proc(ctx: RouteContext): RouteResult =
-            return lastFunc ctx
+    handler(ctx) do:return lastFunc ctx
 
-proc code*(code: HttpCode): RouteHandler =
-    return wrap(proc(ctx: RouteContext): RouteResult = ctx.code code)
+proc code*(code: HttpCode): RouteHandler = 
+    handler(ctx) do: return ctx.code code
     
-proc text*(content: string): RouteHandler =
-    return wrap(proc(ctx: RouteContext): RouteResult = ctx.text content)
+proc text*(content: string): RouteHandler = 
+    handler(ctx) do: return ctx.text content
 
-proc html*(content: string): RouteHandler =
-    return wrap(proc(ctx: RouteContext): RouteResult = ctx.html content)
+proc html*(content: string): RouteHandler = 
+    handler(ctx) do: return ctx.html content
     
-proc redirect*(location: string, code: HttpCode = Http302): RouteHandler =
-    return wrap(proc(ctx: RouteContext): RouteResult = ctx.redirect(location, code))
-
-proc mustBeAuth*(next: RouteFunc): RouteFunc {.procvar.} =
-    return proc(ctx: RouteContext): RouteResult =
-        return (ctx.config.mustBeAuth next) ctx
+proc redirect*(location: string, code: HttpCode = Http302): RouteHandler = 
+    handler(ctx) do: return ctx.redirect(location, code)
+    
+let mustBeAuth* = handler(ctx, next) do:
+    return (ctx.config.mustBeAuth next) ctx
