@@ -11,28 +11,27 @@ type
         id*     : string
         name*   : string
         role*   : seq[string]  
-    GetUser*                    = proc(id,pass:string): AuthedUser
-    Config* = object
-        mustBeAuth*         : RouteHandler 
-        
+    GetUser*                    = proc(id,pass:string): AuthedUser    
     RouteContext*   {.gcsafe.}  = ref object
         req*                : RouteRequest
         res*                : RouteResponse
         subRouteContext*    : string
         user*               : AuthedUser
-        config*             : Config
+        middlewares*        : seq[Middleware]
 
     Router*     = ref object
         handler*        : RouteHandler
         errorHandler*   : ErrorHandler
-        middleware*     : RouteHandler
-        config*         : Config
-        
-    
+        middlewares*    : seq[Middleware]    
     ErrorHandler*  {.gcsafe.} = proc (ex: ref Exception): RouteHandler {.gcsafe.}
+
+    Middleware*     = ref object of RootObj
+        before*     : RouteHandler
+        after*      : RouteHandler
+
 
 proc newRouter*(handler: RouteHandler): Router =
     Router(
-        handler : handler,
-        config  : Config()
+        handler     : handler,
+        middlewares : @[]
     )

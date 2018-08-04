@@ -47,7 +47,7 @@ template rf*(c, actions: untyped): untyped =
             actions
     result
     
-let through* = handler(c,n) do:return n c
+let through* : RouteHandler = handler(c,n) do:return n c
 
 # next bind
 proc `>=>`*(h1,h2: RouteHandler): RouteHandler =
@@ -85,7 +85,13 @@ proc getCookie*(ctx: RouteContext, key: string): string =
         if kv[0] == key:
             result = kv[1]
             break
-        
+
+
+proc getMiddleware*[T](ctx: RouteContext): T =
+    let mx = ctx.middlewares.filter do (m:Middleware) -> bool: (m of T)
+    if not mx.any(proc(m:Middleware):bool = true) :
+        return nil
+    return T(mx[0])
     
             
             

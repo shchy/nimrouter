@@ -2,7 +2,9 @@ import
     alpaka,
     indexview,
     strutils,
-    base64
+    base64,
+    # alpaka/basicauth,
+    alpaka/sessionauth
 
 let home = handler(ctx) do:
     return ctx.html homeView(ctx.user.name)

@@ -1,13 +1,19 @@
 import
     httpcore,
     strutils,
-    base64
+    base64,
+    sequtils
 import 
     types,
     core
 
+type
+    BasicAuth*  = ref object of Middleware
+        getUser     : GetUser
+        realm       : string
+
 # Basic auth
-proc basicAuth(getUser: GetUser): RouteHandler =
+proc before(getUser: GetUser): RouteHandler =
     handler(ctx, next) do:
         let auth = ctx.getHeader("Authorization")
         if auth == nil:
@@ -30,18 +36,24 @@ proc basicAuth(getUser: GetUser): RouteHandler =
         return next ctx
 
 
-proc mustBeAuth(getUser: GetUser, realm: string): RouteHandler =
+let mustBeAuth* = 
     handler(ctx, next) do:
+        let basicAuth = getMiddleware[BasicAuth](ctx)
+        if basicAuth == nil :
+            return abort
+        
         if ctx.user == nil:
-            ctx.setHeader("WWW-Authenticate", "Basic realm=" & realm)
+            ctx.setHeader("WWW-Authenticate", "Basic realm=" & basicAuth.realm)
             return ctx.code Http401
         return next ctx
             
 proc useBasicAuth*(router: Router, getUser: GetUser, realm: string): Router =
-    var before = router.middleware
-    if before == nil:
-        before = through
-    router.middleware = before >=> basicAuth(getUser)
-    router.config.mustBeAuth = mustBeAuth(getUser, realm)
+    let middleware = BasicAuth(
+        before      : before(getUser),
+        after       : through,
+        getUser     : getUser,
+        realm       : realm
+    )
+    router.middlewares.add(middleware)
     return router
 
