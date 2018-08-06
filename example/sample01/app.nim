@@ -5,7 +5,8 @@ import
     httpcore,
     os,
     tables,
-    alpaka
+    alpaka,
+    alpaka/sessionauth
 import
     modules/index
 
@@ -21,12 +22,15 @@ proc main() =
         )
         return user
 
-    var r = Router(
-        handler         : choose(
+    var r = newRouter(
+        choose(
             subRoute("/", index.handlers),
             GET >=> serveDir("/static/", "./static/", 60 * 60 * 24 * 7)
         )
-    ).useBasicAuth(debugAuth, "must be signin")
+    ).useSessionAuth(debugAuth, "/", "cookieName", "asdfghjk", 60 * 5, "/", false, true)
+    
+    
+    #.useBasicAuth(debugAuth, "must be signin")
     
     # bind router to asynchttpserver
     proc cb(req:Request) {.async.} =

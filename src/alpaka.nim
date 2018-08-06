@@ -5,8 +5,7 @@ import
     alpaka/utils,
     alpaka/routing,
     alpaka/router,
-    alpaka/params,
-    alpaka/basicauth
+    alpaka/params
 
 
 export
@@ -14,5 +13,4 @@ export
     core,
     router,
     utils,
-    routing,
-    basicauth
+    routing

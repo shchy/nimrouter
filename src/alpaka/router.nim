@@ -7,7 +7,8 @@ import
     uri,
     os,
     asyncnet,
-    streams
+    streams,
+    sequtils
 import
     core
 
@@ -52,9 +53,6 @@ proc bindContextToResponse(req: Request, ctx: RouteContext): Future[void] {.gcsa
 # routing for request
 # asynchttpServer
 proc routing*(router: Router, req: Request): Future[void] {.gcsafe.} =
-    if router.middleware == nil:
-        router.middleware = through
-        
     let ctx = RouteContext(
         req             : RouteRequest( 
             reqMethod   : req.reqMethod,
@@ -69,17 +67,29 @@ proc routing*(router: Router, req: Request): Future[void] {.gcsafe.} =
             body        : ""
         ),
         subRouteContext : "",
-        config          : router.config,
+        middlewares     : router.middlewares,
     )
     var errorHandler = router.errorHandler
     if errorHandler == nil:
         errorHandler = defaultErrorHandler
 
     try:
-        let handler = router.middleware >=> router.handler
+        let before = filter(router.middlewares.map do (m:Middleware) -> RouteHandler: m.before
+                        , proc (h: RouteHandler): bool = h != nil)
+                        .foldl(a >=> b, through)
+        let after = filter(router.middlewares.map do (m:Middleware) -> RouteHandler: m.after
+                        , proc (h: RouteHandler): bool = h != nil)
+                        .foldl(a >=> b, through)
+        
+        let handler = before >=> router.handler
+
         let res = (handler final) ctx
+
         if res == RouteResult.none:
             return req.respond(Http404, "404 NotFound")
+        
+        discard (after final) ctx
+        
         return req.bindContextToResponse(ctx)
     except:
         let ex = getCurrentException()

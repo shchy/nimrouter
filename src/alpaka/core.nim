@@ -47,7 +47,7 @@ template rf*(c, actions: untyped): untyped =
             actions
     result
     
-let through* = handler(c,n) do:return n c
+let through* : RouteHandler = handler(c,n) do:return n c
 
 # next bind
 proc `>=>`*(h1,h2: RouteHandler): RouteHandler =
@@ -63,6 +63,40 @@ proc setHeader*(ctx: RouteContext, key, val: string): void =
 
 proc getHeader*(ctx: RouteContext, key: string): string =
     return ctx.req.headers.getOrDefault(key)
+
+proc setCookie*(ctx: RouteContext, key, val: string, maxAge: int, path: string, isSecure, isHttpOnly: bool): void =
+    var val = key & "=" & val & "; Max-Age=" & $maxAge
+    if not path.isNilOrWhitespace:
+        val.add("; Path=" & path)
+    if isSecure:
+        val.add("; secure")
+    if isHttpOnly:
+        val.add("; httponly")
+    
+    ctx.setHeader("Set-Cookie", val)
+
+proc getCookie*(ctx: RouteContext, key: string): string =
+    let cookies = ctx.getHeader("Cookie").split(";").map do (v: string) -> string: v.strip
+    result = ""
+    for cookie in cookies:
+        let kv = cookie.split("=")
+        if kv.len != 2:
+            continue
+        if kv[0] == key:
+            result = kv[1]
+            break
+
+
+proc getMiddleware*[T](ctx: RouteContext): T =
+    let mx = ctx.middlewares.filter do (m:Middleware) -> bool: (m of T)
+    if not mx.any(proc(m:Middleware):bool = true) :
+        return nil
+    return T(mx[0])
+    
+            
+            
+        
+
 
 ### context utils
 proc resp*(ctx: RouteContext, code: HttpCode, content: string): RouteResult =

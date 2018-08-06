@@ -35,6 +35,4 @@ proc html*(content: string): RouteHandler =
     
 proc redirect*(location: string, code: HttpCode = Http302): RouteHandler = 
     handler(ctx) do: return ctx.redirect(location, code)
-    
-let mustBeAuth* = handler(ctx, next) do:
-    return (ctx.config.mustBeAuth next) ctx
+
