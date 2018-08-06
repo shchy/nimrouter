@@ -23,7 +23,7 @@ let handlers* = [
         routep("/signin/{id: string}/{pass: string}")   >=> login,
         route("/signout/")                              >=> logout,
         route("/home/")                                 >=> mustBeAuth  >=> home,
-        route("/")                                      >=> handler(ctx) do: return ctx.text "hello",
+        route("/")                                      >=> (handler(ctx) do: return ctx.text "hello"),
     # POST    >=>
         # route("/signin")        >=> signin
 ]

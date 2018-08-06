@@ -26,7 +26,7 @@ proc main() =
             subRoute("/", index.handlers),
             GET >=> serveDir("/static/", "./static/", 60 * 60 * 24 * 7)
         )
-    ).useSessionAuth(debugAuth, "/", "asdfghjk")
+    ).useSessionAuth(debugAuth, "/", "cookieName", "asdfghjk", 60 * 5, "/", false, true)
     #.useBasicAuth(debugAuth, "must be signin")
     
     # bind router to asynchttpserver

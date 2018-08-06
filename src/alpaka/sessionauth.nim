@@ -7,16 +7,24 @@ import
     types,
     core
 
-const cookieName = "AuthCookie"
-var debug : tuple[hashKey: string, getUser: GetUser]
+var debug : tuple[
+    cookieName: string,
+    hashKey: string, 
+    getUser: GetUser, 
+    maxage: int, 
+    path: string, 
+    isSecure: bool, 
+    isHttpOnly: bool
+    ]
 
+# todo add timeout
 var cache: Table[string, tuple[id: string,pass: string]] = 
     initTable[string,tuple[id: string,pass: string]]()
 
 # Basic auth
-proc basicAuth(getUser: GetUser): RouteHandler =
+proc before(getUser: GetUser): RouteHandler =
     handler(ctx, next) do:
-        let hash = ctx.getCookie(cookieName)
+        let hash = ctx.getCookie(debug.cookieName)
         
         if hash.isNilOrWhitespace:
             return next ctx
@@ -43,7 +51,7 @@ proc signin*(ctx: RouteContext, id, pass: string): bool =
 
     ctx.user = user
     let hash = md5.getMD5(debug.hashKey & id)
-    ctx.setCookie(cookieName, hash, 60 * 5) 
+    ctx.setCookie(debug.cookieName, hash, debug.maxage, debug.path, debug.isSecure, debug.isHttpOnly) 
     cache[hash] = (id: id, pass: pass)
     return true
 
@@ -55,12 +63,23 @@ proc signout*(ctx: RouteContext): void =
         cache.del hash
     ctx.user = nil
             
-proc useSessionAuth*(router: Router, getUser: GetUser, redirectPath, hashKey: string): Router =
-    debug = (hashKey: hashKey, getUser: getUser)
-    var before = router.middleware
-    if before == nil:
-        before = through
-    router.middleware = before >=> basicAuth(getUser)
+proc useSessionAuth*(router: Router, getUser: GetUser, redirectPath
+                    , cookieName, hashKey: string
+                    , maxage: int, path: string
+                    , isSecure, isHttpOnly: bool): Router =
+    debug = (
+        cookieName: cookieName,
+        hashKey: hashKey, 
+        getUser: getUser, 
+        maxage: maxage, 
+        path: path, 
+        isSecure: isSecure, 
+        isHttpOnly: isHttpOnly
+        )
+    var origin = router.middleware
+    if origin == nil:
+        origin = through
+    router.middleware = origin >=> before(getUser)
     router.config.mustBeAuth = mustBeAuth(getUser, redirectPath)
     
     return router
