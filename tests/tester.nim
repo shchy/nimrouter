@@ -4,6 +4,7 @@ import
     strutils,
     tables,
     sequtils,
+    os,
     ../src/alpaka
 
 
@@ -37,6 +38,10 @@ suite "test context":
             choose(
                 GET >=> route("/") >=> (handler(ctx) do: ctx.text "hello"),
                 GET >=> route("/html") >=> (handler(ctx) do: ctx.html "world"),
+                GET >=> route("/code") >=> (handler(ctx) do: ctx.code Http400),
+                GET >=> route("/resp") >=> (handler(ctx) do: ctx.resp(Http500, "world")),
+                GET >=> route("/redirect") >=> (handler(ctx) do: ctx.redirect("/asdf")),
+                GET >=> routep("/getfile/{ file:string }") >=> (handler(ctx) do: ctx.sendfile(os.getAppDir() & "/assets/" & ctx.req.getUrlParam("file"))),
                 GET >=> route("/header") >=> 
                     (handler(ctx) do: 
                         let value = ctx.getHeader("test")
@@ -54,7 +59,7 @@ suite "test context":
                         ctx.setCookie("test4", value, 1000, true, true, "/test/")
                         ctx.html "copy cookie"),
             )
-            
+
     let router = newRouter(handler)
     test "text":
         let context = router.routingTest(HttpGet, "/")
@@ -68,6 +73,30 @@ suite "test context":
         check(context.res.code == Http200)
         check(context.res.headers["content-type"] == "text/html")
         check(isNilOrWhitespace context.res.contentFilePath)
+    test "code":
+        let context = router.routingTest(HttpGet, "/code")
+        check(context.res.body == "")
+        check(context.res.code == Http400)
+        check(not context.res.headers.hasKey "content-type")
+        check(isNilOrWhitespace context.res.contentFilePath)
+    test "resp":
+        let context = router.routingTest(HttpGet, "/resp")
+        check(context.res.body == "world")
+        check(context.res.code == Http500)
+        check(not context.res.headers.hasKey "content-type")
+        check(isNilOrWhitespace context.res.contentFilePath)
+    test "redirect":
+        let context = router.routingTest(HttpGet, "/redirect")
+        check(context.res.body == "")
+        check(context.res.code == Http302)
+        check(context.res.headers["location"] == "/asdf")
+        check(isNilOrWhitespace context.res.contentFilePath)
+    test "sendfile":
+        let context = router.routingTest(HttpGet, "/getfile/test.txt")
+        check(context.res.body == "")
+        check(context.res.code == Http200)
+        check(context.res.headers["content-type"] == "text/plain")
+        check(context.res.contentFilePath == os.getAppDir() & "/assets/" & "test.txt")
     test "header":
         let context = router.routingTest(HttpGet, "/header", "", (key:"test", value: "asdfghjk"))
         check(context.res.body == "copy header")
