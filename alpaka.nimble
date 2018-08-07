@@ -10,7 +10,7 @@ license       = "MIT"
 requires "nim >= 0.16.0"
 
 skipDirs      = @["example"]
-bin           = @["alpaka"]
+bin           = @["alpaka", "alpakaview", "alpakabasicauth", "alpakasessionauth"]
 
 task clean, "clean":
     exec "rm -rf ./example/sample00/nimcache"
