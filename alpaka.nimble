@@ -9,6 +9,7 @@ license       = "MIT"
 
 requires "nim >= 0.18.1"
 
+binDir        = "bin"
 srcDir        = "src"
 skipDirs      = @["example"]
 bin           = @["alpaka"]
