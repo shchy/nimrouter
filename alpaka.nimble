@@ -10,8 +10,6 @@ license       = "MIT"
 requires "nim >= 0.16.0"
 
 skipDirs      = @["example"]
-# binDir        = "bin"
-
 bin           = @["alpaka"]
 
 task clean, "clean":
