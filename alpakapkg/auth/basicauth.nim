@@ -55,6 +55,6 @@ proc useBasicAuth*(router: Router, getUser: GetUser, realm: string): Router =
         getUser     : getUser,
         realm       : realm
     )
-    router.middlewares.add(middleware)
+    router.addMiddleware(middleware)
     return router
 

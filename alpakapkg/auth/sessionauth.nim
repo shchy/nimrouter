@@ -95,6 +95,6 @@ proc useSessionAuth*(router: Router, getUser: GetUser
         isHttpOnly  : isHttpOnly,
         cache       : initTable[string,tuple[id: string,pass: string]]()
         )
-    router.middlewares.add(middleware)
+    router.addMiddleware(middleware)
     return router
 

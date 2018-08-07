@@ -11,13 +11,17 @@ type
         errorHandler*   : ErrorHandler
         middlewares*    : seq[Middleware] 
         
-
 proc newRouter*(handler: RouteHandler, errorHandler: ErrorHandler = nil): Router =
     Router(
         handler     : handler,
         errorHandler: errorHandler,
         middlewares : @[]
     )
+
+proc addMiddleware*(router: Router, middleware: Middleware) =
+    if router.middlewares == nil:
+        router.middlewares = @[]
+    router.middlewares.add(middleware)
         
 proc defaultErrorHandler(ex: ref Exception): RouteHandler =
     handler(ctx) do: ctx.resp(Http500, "Internal Server Error")

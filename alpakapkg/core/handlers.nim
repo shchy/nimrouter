@@ -148,7 +148,7 @@ proc subRoute*(path: string, handlers: openarray[RouteHandler]): RouteHandler =
 
 # cacheable
 proc isCached*(ctx: RouteContext, etag: string, maxAge: int): bool = 
-    ctx.setHeader("Cache-Control", "max-age="& $maxage)
+    ctx.setHeader("Cache-Control", "max-age=" & $maxage)
     ctx.setHeader("ETag", etag)
     let etagInHeader = ctx.getHeader("If-None-Match")
     return etagInHeader.contains(etag)
