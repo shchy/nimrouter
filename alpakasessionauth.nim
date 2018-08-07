@@ -1,2 +1,0 @@
-import alpakapkg/auth/sessionauth
-export sessionauth

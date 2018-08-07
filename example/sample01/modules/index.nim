@@ -4,7 +4,7 @@ import
     strutils,
     base64,
     # alpaka/basicauth,
-    alpakasessionauth
+    alpaka/auth/sessionauth
 
 let home = handler(ctx) do:
     ctx.html homeView(ctx.user.name)
