@@ -136,20 +136,21 @@ proc routep*(path: string): RouteHandler =
             if captures.len() != 2:
                 return RouteResult.none
                 
-            let name = captures[0]
-            let typeName = captures[1]
+            let name = decodeUrl captures[0]
+            let typeName = decodeUrl captures[1]
+            let value = decodeUrl segment
             
             try:
                 case typeName:
                     of "int":
-                        discard segment.parseInt()
+                        discard value.parseInt()
                     of "float":
-                        discard segment.parseFloat()
+                        discard value.parseFloat()
                     of "string":
                         discard
                     else: 
                         return RouteResult.none    
-                ctx.req.urlParams.setParam(decodeUrl name, decodeUrl segment)
+                ctx.req.urlParams.setParam(name, value)
             except:
                 return RouteResult.none
         return next ctx

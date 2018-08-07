@@ -17,25 +17,25 @@ export
     params
     
 type
-    RouteResult*    = enum 
+    RouteResult* = enum 
         none, 
         find 
-    RouteFunc*                  = proc (ctx:RouteContext): RouteResult
-    RouteHandler*   {.gcsafe.}  = proc (f:RouteFunc): RouteFunc
-    AuthedUser*                 = ref object
-        id*                 : string
-        name*               : string
-        role*               : seq[string]  
-    RouteContext*   {.gcsafe.}  = ref object
-        req*                : RouteRequest
-        res*                : RouteResponse
-        user*               : AuthedUser
-        middlewares*        : seq[Middleware]
-        subRouteContext*    : string
-    ErrorHandler*  {.gcsafe.} = proc (ex: ref Exception): RouteHandler {.gcsafe.}
-    Middleware*                 = ref object of RootObj
-        before*             : RouteHandler
-        after*              : RouteHandler
+    RouteFunc* = proc (ctx:RouteContext): RouteResult
+    RouteHandler* = proc (f:RouteFunc): RouteFunc
+    ErrorHandler* = proc (ex: ref Exception): RouteHandler
+    AuthedUser* = ref object
+        id*     : string
+        name*   : string
+        role*   : seq[string]  
+    RouteContext* = ref object
+        req*            : RouteRequest
+        res*            : RouteResponse
+        user*           : AuthedUser
+        middlewares*    : seq[Middleware]
+        subRouteContext*: string
+    Middleware* = ref object of RootObj
+        before* : RouteHandler
+        after*  : RouteHandler
 
 let mimeDB = newMimetypes()
 
