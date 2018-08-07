@@ -58,23 +58,23 @@ proc filter*(isMatch: proc(ctx:RouteContext): bool): RouteHandler =
             return abort
 
 # all
-let NOTFOUND*   = filter(rf(_) do: return true)
+let NOTFOUND*   = filter(rf(_) do: true)
 
 # httpmethod filter
-let HEAD*       = filter(rf(ctx) do: return ctx.req.reqMethod == HttpHead)
-let GET*        = filter(rf(ctx) do: return ctx.req.reqMethod == HttpGet)
-let POST*       = filter(rf(ctx) do: return ctx.req.reqMethod == HttpPost)
-let PUT*        = filter(rf(ctx) do: return ctx.req.reqMethod == HttpPut)
-let DELETE*     = filter(rf(ctx) do: return ctx.req.reqMethod == HttpDelete)
-let PATCH*      = filter(rf(ctx) do: return ctx.req.reqMethod == HttpPatch)
-let TRACE*      = filter(rf(ctx) do: return ctx.req.reqMethod == HttpTrace)
-let OPTIONS*    = filter(rf(ctx) do: return ctx.req.reqMethod == HttpOptions)
-let CONNECT*    = filter(rf(ctx) do: return ctx.req.reqMethod == HttpConnect)
+let HEAD*       = filter(rf(ctx) do: ctx.req.reqMethod == HttpHead)
+let GET*        = filter(rf(ctx) do: ctx.req.reqMethod == HttpGet)
+let POST*       = filter(rf(ctx) do: ctx.req.reqMethod == HttpPost)
+let PUT*        = filter(rf(ctx) do: ctx.req.reqMethod == HttpPut)
+let DELETE*     = filter(rf(ctx) do: ctx.req.reqMethod == HttpDelete)
+let PATCH*      = filter(rf(ctx) do: ctx.req.reqMethod == HttpPatch)
+let TRACE*      = filter(rf(ctx) do: ctx.req.reqMethod == HttpTrace)
+let OPTIONS*    = filter(rf(ctx) do: ctx.req.reqMethod == HttpOptions)
+let CONNECT*    = filter(rf(ctx) do: ctx.req.reqMethod == HttpConnect)
 
 
 # path filter
 proc route*(path: string): RouteHandler =
-    return filter(rf(ctx) do: return ctx.req.url.path == ctx.withSubRoute path )
+    filter(rf(ctx) do: ctx.req.url.path == ctx.withSubRoute path )
 
 const urlParamRegex = r"{\s?(\w+?)\s?:\s?(int|string|float)\s?}"
 # path filter with url parameter
@@ -161,16 +161,16 @@ proc asCacheable*(getEtag: proc(): string, maxAge: int): RouteHandler =
         return next ctx
 
 proc code*(code: HttpCode): RouteHandler = 
-    handler(ctx) do: return ctx.code code
+    handler(ctx) do: ctx.code code
     
 proc text*(content: string): RouteHandler = 
-    handler(ctx) do: return ctx.text content
+    handler(ctx) do: ctx.text content
 
 proc html*(content: string): RouteHandler = 
-    handler(ctx) do: return ctx.html content
+    handler(ctx) do: ctx.html content
     
 proc redirect*(location: string, code: HttpCode = Http302): RouteHandler = 
-    handler(ctx) do: return ctx.redirect(location, code)
+    handler(ctx) do: ctx.redirect(location, code)
 
 
 # file serve

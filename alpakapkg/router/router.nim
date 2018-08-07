@@ -20,10 +20,10 @@ proc newRouter*(handler: RouteHandler, errorHandler: ErrorHandler = nil): Router
     )
         
 proc defaultErrorHandler(ex: ref Exception): RouteHandler =
-    handler(ctx) do: return ctx.resp(Http500, "Internal Server Error")
+    handler(ctx) do: ctx.resp(Http500, "Internal Server Error")
 
 proc final*(ctx: RouteContext): RouteResult {.procvar.} =
-    return RouteResult.find
+    RouteResult.find
     
 proc routing*(router: Router, ctx: RouteContext): RouteContext =
     var errorHandler = router.errorHandler

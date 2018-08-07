@@ -4,7 +4,7 @@ import
     alpakaview
 
 proc layout*(t: string, content: string): string =
-    return html(lang="en",
+    html(lang="en",
         head(
             meta(charset="utf-8"),
             meta(content="width=device-width,initial-scale=1", name="viewport"),

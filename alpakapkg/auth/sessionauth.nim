@@ -84,7 +84,7 @@ proc useSessionAuth*(router: Router, getUser: GetUser
                     , isSecure, isHttpOnly: bool): Router =
     let middleware = SessionAuth(
         before      : before(getUser),
-        after       : (handler(c,n) do : return n c),
+        after       : (handler(c,n) do : n c),
         cookieName  : cookieName,
         redirectPath: redirectPath,
         hashKey     : hashKey, 
