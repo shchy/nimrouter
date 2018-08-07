@@ -2,6 +2,8 @@ import
     unittest,
     uri,
     strutils,
+    tables,
+    sequtils,
     ../src/alpaka
 
 
@@ -42,7 +44,15 @@ suite "test context":
                         let notSet = ctx.getHeader("notSet")
                         ctx.setHeader("notSet", notSet)
                         ctx.html "copy header"),
-                    # (handler(ctx) do: ctx.html "controllerMethod"),
+                GET >=> route("/cookie") >=> 
+                    (handler(ctx) do: 
+                        let value = ctx.getCookie("test")
+                        ctx.setCookie("test", value)
+                        ctx.setCookie("test1", value, 1000)
+                        ctx.setCookie("test2", value, 1000, true)
+                        ctx.setCookie("test3", value, 1000, true, true)
+                        ctx.setCookie("test4", value, 1000, true, true, "/test/")
+                        ctx.html "copy cookie"),
             )
     let router = newRouter(handler)
     test "text":
@@ -70,9 +80,10 @@ suite "test context":
         check(context.res.body == "copy cookie")
         check(context.res.code == Http200)
         check(context.res.headers["content-type"] == "text/html")
-        check(context.res.headers["set-cookie"] == "test=qwerty; max-age=1000; path=/test/")
-        check(context.res.headers["set-cookie"] == "test=qwerty; max-age=1000; path=/test/")
-        check(context.res.headers["set-cookie"] == "test2=qwerty; max-age=1000; path=/test/; secure")
-        check(context.res.headers["set-cookie"] == "test3=qwerty; max-age=1000; path=/test/; secure; httponly")
+        check(context.res.headers.table["set-cookie"].contains("test=qwerty"))
+        check(context.res.headers.table["set-cookie"].contains("test1=qwerty; Max-Age=1000"))
+        check(context.res.headers.table["set-cookie"].contains("test2=qwerty; Max-Age=1000; secure"))
+        check(context.res.headers.table["set-cookie"].contains("test3=qwerty; Max-Age=1000; secure; httponly"))
+        check(context.res.headers.table["set-cookie"].contains("test4=qwerty; Max-Age=1000; secure; httponly; Path=/test/"))
         check(isNilOrWhitespace context.res.contentFilePath)
     

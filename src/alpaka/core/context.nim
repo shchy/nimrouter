@@ -47,15 +47,16 @@ proc setHeader*(ctx: RouteContext, key, val: string): void =
 proc getHeader*(ctx: RouteContext, key: string): string =
     return ctx.req.headers.getOrDefault(key)
 
-proc setCookie*(ctx: RouteContext, key, val: string, maxAge: int, path: string, isSecure, isHttpOnly: bool): void =
-    var val = key & "=" & val & "; Max-Age=" & $maxAge
-    if not path.isNilOrWhitespace:
-        val.add("; Path=" & path)
+proc setCookie*(ctx: RouteContext, key, val: string, maxAge: int = 0, isSecure, isHttpOnly: bool = false, path: string = nil): void =
+    var val = key & "=" & val
+    if maxAge != 0:
+        val.add("; Max-Age=" & $maxAge)
     if isSecure:
         val.add("; secure")
     if isHttpOnly:
         val.add("; httponly")
-    
+    if not path.isNilOrWhitespace:
+        val.add("; Path=" & path)
     ctx.setHeader("Set-Cookie", val)
 
 proc getCookie*(ctx: RouteContext, key: string): string =
