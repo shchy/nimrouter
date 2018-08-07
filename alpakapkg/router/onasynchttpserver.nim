@@ -1,4 +1,3 @@
-# depend on asynchttpserver is only this  
 import 
     httpcore,
     asyncdispatch,
@@ -10,12 +9,19 @@ import
     streams,
     sequtils
 import
-    context
+    ../core/context,
+    router
+
+const FILE_READ_BUFFER_SIZE: int = 1024 * 1024 * 16
+
+
+type
+    RouterOnAsyncHttpServer* = ref object of Router[Request]
+        discard
 
 proc final*(ctx: RouteContext): RouteResult {.procvar.} =
     return RouteResult.find
     
-const FILE_READ_BUFFER_SIZE: int = 1024 * 1024 * 16
 
 proc sendFile(req: Request, code: HttpCode, headers: HttpHeaders, filePath: string) {.async.} =
     var head = "HTTP/1.1 " & $code & "\c\L"
@@ -32,10 +38,6 @@ proc sendFile(req: Request, code: HttpCode, headers: HttpHeaders, filePath: stri
         await req.client.send(bp, readedsize)
     file.close()
 
-
-proc defaultErrorHandler(ex: ref Exception): RouteHandler =
-    handler(ctx) do: return ctx.resp(Http500, "Internal Server Error")
-
 proc bindContextToResponse(req: Request, ctx: RouteContext): Future[void] {.gcsafe.} =
     
     if existsFile ctx.res.contentFilePath:
@@ -50,9 +52,13 @@ proc bindContextToResponse(req: Request, ctx: RouteContext): Future[void] {.gcsa
         , ctx.res.headers
     )
 
+proc defaultErrorHandler(ex: ref Exception): RouteHandler =
+    handler(ctx) do: return ctx.resp(Http500, "Internal Server Error")
+
+
 # routing for request
 # asynchttpServer
-proc routing*(router: Router, req: Request): Future[void] {.gcsafe.} =
+method routing*(this: Router, req: Request): Future[void] {.gcsafe, base.} =
     let ctx = RouteContext(
         req             : RouteRequest( 
             reqMethod   : req.reqMethod,
@@ -67,21 +73,21 @@ proc routing*(router: Router, req: Request): Future[void] {.gcsafe.} =
             body        : ""
         ),
         subRouteContext : "",
-        middlewares     : router.middlewares,
+        middlewares     : this.middlewares,
     )
-    var errorHandler = router.errorHandler
+    var errorHandler = this.errorHandler
     if errorHandler == nil:
         errorHandler = defaultErrorHandler
 
     try:
-        let before = filter(router.middlewares.map do (m:Middleware) -> RouteHandler: m.before
+        let before = filter(this.middlewares.map do (m:Middleware) -> RouteHandler: m.before
                         , proc (h: RouteHandler): bool = h != nil)
                         .foldl(a >=> b, through)
-        let after = filter(router.middlewares.map do (m:Middleware) -> RouteHandler: m.after
+        let after = filter(this.middlewares.map do (m:Middleware) -> RouteHandler: m.after
                         , proc (h: RouteHandler): bool = h != nil)
                         .foldl(a >=> b, through)
         
-        let handler = before >=> router.handler
+        let handler = before >=> this.handler
 
         let res = (handler final) ctx
 
@@ -102,8 +108,8 @@ proc routing*(router: Router, req: Request): Future[void] {.gcsafe.} =
         let res = (handler final) ctx
         if res == RouteResult.none:
             return req.respond(Http500, "Internal Server Error")
-              
+                
         return req.bindContextToResponse(ctx)
 
 
-    
+        

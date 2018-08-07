@@ -3,8 +3,7 @@ import
 import 
     alpakapkg/core/context,
     alpakapkg/core/handlers,
-    alpakapkg/core/router,
-    alpakapkg/core/params
+    alpakapkg/router/router
 
 
 export

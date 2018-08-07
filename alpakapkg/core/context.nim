@@ -33,23 +33,11 @@ type
         user*               : AuthedUser
         middlewares*        : seq[Middleware]
 
-    Router*     = ref object
-        handler*        : RouteHandler
-        errorHandler*   : ErrorHandler
-        middlewares*    : seq[Middleware]    
     ErrorHandler*  {.gcsafe.} = proc (ex: ref Exception): RouteHandler {.gcsafe.}
 
     Middleware*     = ref object of RootObj
         before*     : RouteHandler
         after*      : RouteHandler
-
-
-proc newRouter*(handler: RouteHandler, errorHandler: ErrorHandler = nil): Router =
-    Router(
-        handler     : handler,
-        errorHandler: errorHandler,
-        middlewares : @[]
-    )
 
 let mimeDB = newMimetypes()
 # 
