@@ -101,10 +101,10 @@ proc main() =
                 route("/test/")                         >=> text "test",
                 subRoute("/sub3/",[ 
                     route("/")                          >=> text "sub3",
-                    routep("/{aaa : int}")              >=> wrap(proc(ctx: RouteContext): RouteResult = ctx.text( ctx.req.getUrlParam("aaa") ) )
+                    routep("/{aaa : int}")              >=> handler(ctx) do: return ctx.text( ctx.req.getUrlParam("aaa") ) 
                 ])
             ]),
-            route("/error/")                            >=> wrap(proc(ctx:RouteContext): RouteResult = raise newException(Exception, "testException")),
+            route("/error/")                            >=> handler(_) do: raise newException(Exception, "testException"),
             NOTFOUND                                    >=> notfoundHandler
         )
     var r = newRouter(
@@ -115,7 +115,7 @@ proc main() =
     
     # bind router to asynchttpserver
     proc cb(req:Request) {.async.} =
-        await r.routing(req)
+        await r.bindAsyncHttpServer(req)
 
     let server = newAsyncHttpServer(true, true)
     waitfor server.serve(Port(8080), cb)

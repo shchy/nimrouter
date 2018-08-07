@@ -5,7 +5,8 @@ import
     md5,
     sequtils
 import 
-    ../core/context
+    ../core/context,
+    ../router/router
 
 type
     GetUser*      = proc(id,pass:string): AuthedUser    
@@ -83,7 +84,7 @@ proc useSessionAuth*(router: Router, getUser: GetUser
                     , isSecure, isHttpOnly: bool): Router =
     let middleware = SessionAuth(
         before      : before(getUser),
-        after       : through,
+        after       : handler(c,n) do : return n c,
         cookieName  : cookieName,
         redirectPath: redirectPath,
         hashKey     : hashKey, 

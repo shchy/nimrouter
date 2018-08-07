@@ -63,8 +63,6 @@ template rf*(c, actions: untyped): untyped =
             var c = ctx
             actions
     result
-    
-let through* : RouteHandler = handler(c,n) do:return n c
 
 # next bind
 proc `>=>`*(h1,h2: RouteHandler): RouteHandler =
@@ -75,6 +73,7 @@ proc `>=>`*(h1,h2: RouteHandler): RouteHandler =
             return f1 ctx
 
 ########## context procs
+
 proc setHeader*(ctx: RouteContext, key, val: string): void =
     ctx.res.headers.add(key, val)
 

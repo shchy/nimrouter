@@ -32,7 +32,7 @@ proc main() =
     
     # bind router to asynchttpserver
     proc cb(req:Request) {.async.} =
-        await r.routing(req)
+        await r.bindAsyncHttpServer(req)
 
     let server = newAsyncHttpServer(true, true)
     waitfor server.serve(Port(8080), cb)

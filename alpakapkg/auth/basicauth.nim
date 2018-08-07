@@ -4,8 +4,9 @@ import
     base64,
     sequtils
 import 
-    ../core/context
-    
+    ../core/context,
+    ../router/router
+
 type
     GetUser*    = proc(id,pass:string): AuthedUser    
     BasicAuth*  = ref object of Middleware
@@ -50,7 +51,7 @@ let mustBeAuth* =
 proc useBasicAuth*(router: Router, getUser: GetUser, realm: string): Router =
     let middleware = BasicAuth(
         before      : before(getUser),
-        after       : through,
+        after       : handler(c,n) do: return n c,
         getUser     : getUser,
         realm       : realm
     )

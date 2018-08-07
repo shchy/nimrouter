@@ -130,7 +130,7 @@ proc subRoute*(path: string, handlers: openarray[RouteHandler]): RouteHandler =
     let hs = @handlers
     var h : RouteHandler
     if hs.len() == 0:
-        h = through
+        h = handler(c, n) do: return n c 
     elif hs.len() == 1:
         h = hs[0]
     else:
@@ -142,6 +142,7 @@ proc subRoute*(path: string, handlers: openarray[RouteHandler]): RouteHandler =
         ctx.updateSubRoute path
         let f = h next
         return f ctx
+
 
 ########## utils handlers 
 

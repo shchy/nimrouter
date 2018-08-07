@@ -14,15 +14,6 @@ import
 
 const FILE_READ_BUFFER_SIZE: int = 1024 * 1024 * 16
 
-
-type
-    RouterOnAsyncHttpServer* = ref object of Router[Request]
-        discard
-
-proc final*(ctx: RouteContext): RouteResult {.procvar.} =
-    return RouteResult.find
-    
-
 proc sendFile(req: Request, code: HttpCode, headers: HttpHeaders, filePath: string) {.async.} =
     var head = "HTTP/1.1 " & $code & "\c\L"
     for k,v in headers:
@@ -52,13 +43,9 @@ proc bindContextToResponse(req: Request, ctx: RouteContext): Future[void] {.gcsa
         , ctx.res.headers
     )
 
-proc defaultErrorHandler(ex: ref Exception): RouteHandler =
-    handler(ctx) do: return ctx.resp(Http500, "Internal Server Error")
-
-
 # routing for request
 # asynchttpServer
-method routing*(this: Router, req: Request): Future[void] {.gcsafe, base.} =
+method bindAsyncHttpServer*(router: Router, req: Request): Future[void] {.gcsafe, base.} =
     let ctx = RouteContext(
         req             : RouteRequest( 
             reqMethod   : req.reqMethod,
@@ -72,44 +59,17 @@ method routing*(this: Router, req: Request): Future[void] {.gcsafe, base.} =
             headers     : newHttpHeaders(),
             body        : ""
         ),
-        subRouteContext : "",
-        middlewares     : this.middlewares,
+        middlewares     : router.middlewares,
     )
-    var errorHandler = this.errorHandler
-    if errorHandler == nil:
-        errorHandler = defaultErrorHandler
 
     try:
-        let before = filter(this.middlewares.map do (m:Middleware) -> RouteHandler: m.before
-                        , proc (h: RouteHandler): bool = h != nil)
-                        .foldl(a >=> b, through)
-        let after = filter(this.middlewares.map do (m:Middleware) -> RouteHandler: m.after
-                        , proc (h: RouteHandler): bool = h != nil)
-                        .foldl(a >=> b, through)
-        
-        let handler = before >=> this.handler
-
-        let res = (handler final) ctx
-
-        if res == RouteResult.none:
+        let res = router.routing(ctx)
+        if res == nil:
             return req.respond(Http404, "404 NotFound")
-        
-        discard (after final) ctx
         
         return req.bindContextToResponse(ctx)
     except:
-        let ex = getCurrentException()
-        let msg = getCurrentExceptionMsg()
-        echo "Exception" & repr(ex) & " message:" & msg
-
-        if errorHandler == nil:
-            return req.respond(Http500, "Internal Server Error")
-        let handler = errorHandler ex
-        let res = (handler final) ctx
-        if res == RouteResult.none:
-            return req.respond(Http500, "Internal Server Error")
-                
-        return req.bindContextToResponse(ctx)
-
+        return req.respond(Http500, "Internal Server Error")
+        
 
         
