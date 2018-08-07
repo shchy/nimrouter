@@ -54,6 +54,7 @@ suite "test context":
                         ctx.setCookie("test4", value, 1000, true, true, "/test/")
                         ctx.html "copy cookie"),
             )
+            
     let router = newRouter(handler)
     test "text":
         let context = router.routingTest(HttpGet, "/")
