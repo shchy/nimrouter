@@ -45,7 +45,7 @@ proc bindContextToResponse(req: Request, ctx: RouteContext): Future[void] {.gcsa
 
 # routing for request
 # asynchttpServer
-method bindAsyncHttpServer*(router: Router, req: Request): Future[void] {.gcsafe, base.} =
+proc bindAsyncHttpServer*(router: Router, req: Request): Future[void] {.gcsafe.} =
     let ctx = RouteContext(
         req             : RouteRequest( 
             reqMethod   : req.reqMethod,
@@ -61,7 +61,7 @@ method bindAsyncHttpServer*(router: Router, req: Request): Future[void] {.gcsafe
         ),
         middlewares     : router.middlewares,
     )
-
+    
     try:
         let res = router.routing(ctx)
         if res == nil:
