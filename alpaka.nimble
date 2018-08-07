@@ -9,10 +9,10 @@ license       = "MIT"
 
 requires "nim >= 0.16.0"
 
-srcDir        = "src"
-binDir        = "bin"
+skipDirs      = @["example"]
+# binDir        = "bin"
 
-# bin           = @["alpaka"]
+bin           = @["alpaka"]
 
 task clean, "clean":
     exec "rm -rf ./example/sample00/nimcache"
