@@ -18,6 +18,10 @@ proc makeCtx(httpMethod: HttpMethod, path: string, body: string = "" ): RouteCon
                 body        : body
             ),
         )
+proc routingTest(router: Router, httpMethod: HttpMethod, path: string, body: string = ""): RouteContext =
+    let ctx = makeCtx(httpMethod, path, body)
+    router.routing(ctx)
+    
 
 suite "testblock":
     let handler =
@@ -28,7 +32,21 @@ suite "testblock":
             )
     let router = newRouter(handler)
     
-    test "test00":
-        let context = makeCtx(HttpGet, "/")
-        discard router.routing(context)
+    test "route00":
+        let context = router.routingTest(HttpGet, "/")
         check(context.res.body == "hello")
+        check(context.res.code == Http200)
+        check(context.res.headers["content-type"] == "text/plain")
+        check(context.res.contentFilePath == "")
+    test "route01":
+        let context = router.routingTest(HttpGet, "/method")
+        check(context.res.body == "method")
+        check(context.res.code == Http200)
+        check(context.res.headers["content-type"] == "text/plain")
+        check(context.res.contentFilePath == "")
+    test "route02":
+        let context = router.routingTest(HttpGet, "/controller/method")
+        check(context.res.body == "controllerMethod")
+        check(context.res.code == Http200)
+        check(context.res.headers["content-type"] == "text/html")
+        check(context.res.contentFilePath == "")
