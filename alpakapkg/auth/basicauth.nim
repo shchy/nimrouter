@@ -51,7 +51,7 @@ let mustBeAuth* =
 proc useBasicAuth*(router: Router, getUser: GetUser, realm: string): Router =
     let middleware = BasicAuth(
         before      : before(getUser),
-        after       : handler(c,n) do: return n c,
+        after       : (handler(c,n) do: return n c),
         getUser     : getUser,
         realm       : realm
     )
