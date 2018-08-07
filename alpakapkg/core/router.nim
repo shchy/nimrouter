@@ -10,7 +10,7 @@ import
     streams,
     sequtils
 import
-    core
+    context
 
 proc final*(ctx: RouteContext): RouteResult {.procvar.} =
     return RouteResult.find
