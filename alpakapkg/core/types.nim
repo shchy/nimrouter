@@ -30,8 +30,9 @@ type
         after*      : RouteHandler
 
 
-proc newRouter*(handler: RouteHandler): Router =
+proc newRouter*(handler: RouteHandler, errorHandler: ErrorHandler = nil): Router =
     Router(
         handler     : handler,
+        errorHandler: errorHandler,
         middlewares : @[]
     )

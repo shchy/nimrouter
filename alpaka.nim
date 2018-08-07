@@ -1,11 +1,11 @@
 import
     httpcore
 import 
-    alpakapkg/core,
-    alpakapkg/utils,
-    alpakapkg/routing,
-    alpakapkg/router,
-    alpakapkg/params
+    alpakapkg/core/core,
+    alpakapkg/core/utils,
+    alpakapkg/core/routing,
+    alpakapkg/core/router,
+    alpakapkg/core/params
 
 
 export

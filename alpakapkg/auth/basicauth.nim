@@ -4,9 +4,9 @@ import
     base64,
     sequtils
 import 
-    types,
-    core
-
+    ../core/types,
+    ../core/core
+    
 type
     BasicAuth*  = ref object of Middleware
         getUser     : GetUser

@@ -1,7 +1,7 @@
 import 
     sequtils,
     macros,
-    alpaka/view
+    alpakaview
 
 proc layout*(t: string, content: string): string =
     return html(lang="en",

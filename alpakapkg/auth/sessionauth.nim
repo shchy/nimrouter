@@ -5,8 +5,8 @@ import
     md5,
     sequtils
 import 
-    types,
-    core
+    ../core/types,
+    ../core/core
 
 type
     SessionAuth*  = ref object of Middleware

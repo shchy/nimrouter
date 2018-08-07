@@ -17,8 +17,8 @@ task clean, "clean":
     exec "rm -rf ./example/sample00/app"
     exec "rm -rf ./example/sample01/nimcache"
     exec "rm -rf ./example/sample01/app"
-    exec "rm -rf ./bin/alpaka"
-    exec "rm -rf ./src/nimcache"
+    exec "rm -rf ./alpaka"
+    exec "rm -rf ./nimcache"
 task ex00, "exec sample00":
     exec "rm -f ./example/sample00/app"
     exec "nimble install -y"

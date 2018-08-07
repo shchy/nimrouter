@@ -6,7 +6,7 @@ import
     os,
     tables,
     alpaka,
-    alpaka/sessionauth
+    alpakasessionauth
 import
     modules/index
 

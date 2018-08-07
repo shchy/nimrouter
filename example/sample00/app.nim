@@ -67,7 +67,7 @@ proc main() =
 
     let errorHandler = 
         proc(ex: ref Exception): RouteHandler =
-            handler(ctx) do: ctx.resp( Http500, "Exception!")
+            handler(ctx) do: return ctx.resp( Http500, "Exception!")
 
     # setting route
     var handler = 
@@ -84,7 +84,7 @@ proc main() =
                     route("/code/")                     >=> code Http200,
                     routep("/asdf/{test : int}/")       >=> debugAborting >=> urlParamTest,
                     routep("/asdf/{test2 : int}/")      >=> urlParamTest,
-                    routep("/asdf/{test3 : string}")    >=> (handler(ctx) do: ctx.text(ctx.req.getUrlParam("test3"))) 
+                    routep("/asdf/{test3 : string}")    >=> (handler(ctx) do: return ctx.text(ctx.req.getUrlParam("test3"))) 
                 ),
             route("/ping/") >=>
                 GET                                     >=> text "pong",
@@ -107,10 +107,11 @@ proc main() =
             route("/error/")                            >=> wrap(proc(ctx:RouteContext): RouteResult = raise newException(Exception, "testException")),
             NOTFOUND                                    >=> notfoundHandler
         )
-    var r = Router(
-        handler         : handler,
-        errorHandler    : errorHandler
+    var r = newRouter(
+        handler,
+        errorHandler
     )
+
     
     # bind router to asynchttpserver
     proc cb(req:Request) {.async.} =
