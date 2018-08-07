@@ -58,8 +58,7 @@ proc bindAsyncHttpServer*(router: Router, req: Request): Future[void] {.gcsafe.}
             code        : Http500,
             headers     : newHttpHeaders(),
             body        : ""
-        ),
-        middlewares     : router.middlewares,
+        )
     )
     
     try:

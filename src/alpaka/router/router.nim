@@ -34,6 +34,8 @@ proc routing*(router: Router, ctx: RouteContext): RouteContext =
     if errorHandler == nil:
         errorHandler = defaultErrorHandler
     
+    ctx.middlewares = router.middlewares
+
     let through : RouteHandler = handler(c,n) do:return n c
 
 

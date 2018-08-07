@@ -11,7 +11,7 @@ requires "nim >= 0.18.0"
 
 binDir        = "bin"
 srcDir        = "src"
-skipDirs      = @["example"]
+skipDirs      = @["example", "test"]
 bin           = @["alpaka"]
 
 task clean, "clean":
