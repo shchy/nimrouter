@@ -1,4 +1,7 @@
 **/nimcache
 nimsuggest.log
 alpaka
+alpakaview
+alpakabasicauth
+alpakasessionauth
 example/*/app

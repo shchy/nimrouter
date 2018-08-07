@@ -18,6 +18,9 @@ task clean, "clean":
     exec "rm -rf ./example/sample01/nimcache"
     exec "rm -rf ./example/sample01/app"
     exec "rm -rf ./alpaka"
+    exec "rm -rf ./alpakabasicauth"
+    exec "rm -rf ./alpakasessionauth"
+    exec "rm -rf ./alpakaview"
     exec "rm -rf ./nimcache"
 task ex00, "exec sample00":
     exec "rm -f ./example/sample00/app"
