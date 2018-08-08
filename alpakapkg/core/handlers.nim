@@ -159,7 +159,6 @@ proc asCacheable*(getEtag: proc(): string, maxAge: int): RouteHandler =
             return ctx.resp(Http304, "Not Modified")
         return next ctx
 
-# not next wrapper
 proc code*(code: HttpCode): RouteHandler = 
     handler(ctx) do: return ctx.code code
     

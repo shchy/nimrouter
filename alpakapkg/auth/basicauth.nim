@@ -7,6 +7,7 @@ import
     ../core/context
     
 type
+    GetUser*    = proc(id,pass:string): AuthedUser    
     BasicAuth*  = ref object of Middleware
         getUser     : GetUser
         realm       : string

@@ -8,6 +8,7 @@ import
     ../core/context
 
 type
+    GetUser*      = proc(id,pass:string): AuthedUser    
     SessionAuth*  = ref object of Middleware
         getUser     : GetUser
         cache       : Table[string, tuple[id: string,pass: string]]  

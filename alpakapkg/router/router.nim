@@ -25,7 +25,6 @@ method bindContextToResponse*(this: Router, req: Request, ctx: RouteContext): Fu
     discard
 
 
-
 proc newRouter*(handler: RouteHandler, errorHandler: ErrorHandler = nil): Router =
     Router(
         handler     : handler,
