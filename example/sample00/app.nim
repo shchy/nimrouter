@@ -11,7 +11,7 @@ import
 proc main() =
     # handlers
     let index = handler(ctx) do:
-        return ctx.html html(
+        ctx.html html(
             h1 "index",
             form(action="/post/", `method`="POST",
                 input(`type`="text", name="name"),
@@ -48,14 +48,14 @@ proc main() =
         return next ctx
 
     let notfoundHandler = handler(ctx) do:
-        return ctx.resp(Http404, h1 "404")
+        ctx.resp(Http404, h1 "404")
 
     let setHeader = handler(ctx, next) do:
         ctx.setHeader("test", "test")
         return next ctx
     
     let urlParamTest = handler(ctx) do:
-        return ctx.text(ctx.req.getUrlParam("test"))
+        ctx.text(ctx.req.getUrlParam("test"))
 
     let queryParamtest = handler(ctx) do:
         let p1 = ctx.req.getQueryParam "p1"
@@ -67,12 +67,12 @@ proc main() =
 
     let errorHandler = 
         proc(ex: ref Exception): RouteHandler =
-            handler(ctx) do: return ctx.resp( Http500, "Exception!")
+            handler(ctx) do: ctx.resp( Http500, "Exception!")
 
     # setting route
     var handler = 
         choose(
-            GET     >=> setHeader >=>
+            GET >=> setHeader >=>
                 choose(
                     route("/")                          >=> index,
                     route("/hello/")                    >=> asCacheable(proc():string="hello", 60)  >=> hello,
@@ -84,7 +84,7 @@ proc main() =
                     route("/code/")                     >=> code Http200,
                     routep("/asdf/{test : int}/")       >=> debugAborting >=> urlParamTest,
                     routep("/asdf/{test2 : int}/")      >=> urlParamTest,
-                    routep("/asdf/{test3 : string}")    >=> handler(ctx) do: return ctx.text(ctx.req.getUrlParam("test3")) 
+                    routep("/asdf/{test3 : string}")    >=> (handler(ctx) do: return ctx.text(ctx.req.getUrlParam("test3"))) 
                 ),
             route("/ping/") >=>
                 GET                                     >=> text "pong",
@@ -101,20 +101,21 @@ proc main() =
                 route("/test/")                         >=> text "test",
                 subRoute("/sub3/",[ 
                     route("/")                          >=> text "sub3",
-                    routep("/{aaa : int}")              >=> wrap(proc(ctx: RouteContext): RouteResult = ctx.text( ctx.req.getUrlParam("aaa") ) )
+                    routep("/{aaa : int}")              >=> (handler(ctx) do: ctx.text( ctx.req.getUrlParam("aaa") )) 
                 ])
             ]),
-            route("/error/")                            >=> wrap(proc(ctx:RouteContext): RouteResult = raise newException(Exception, "testException")),
+            route("/error/")                            >=> (handler(_) do: raise newException(Exception, "testException")),
             NOTFOUND                                    >=> notfoundHandler
         )
-    var r = Router(
-        handler         : handler,
-        errorHandler    : errorHandler
+    var r = newRouter(
+        handler,
+        errorHandler
     )
+
     
     # bind router to asynchttpserver
     proc cb(req:Request) {.async.} =
-        await r.routing(req)
+        await r.bindAsyncHttpServer(req)
 
     let server = newAsyncHttpServer(true, true)
     waitfor server.serve(Port(8080), cb)

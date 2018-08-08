@@ -1,7 +1,7 @@
 import 
     sequtils,
     layoutview,
-    alpaka/view
+    alpakaview
 
 # proc signinViewTmpl(): string =
 #     layout(

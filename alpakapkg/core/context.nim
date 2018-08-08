@@ -9,20 +9,37 @@ import
 import
     request,
     response,
-    params,
-    types
+    params
     
 export
     request,
     response,
-    params,
-    types
-    
+    params
+
+type
+    RouteResult*    = enum 
+        none, find 
+    RouteFunc*                  = proc (ctx:RouteContext): RouteResult
+    RouteHandler*   {.gcsafe.}  = proc (f:RouteFunc): RouteFunc
+    AuthedUser* = ref object
+        id*     : string
+        name*   : string
+        role*   : seq[string]  
+    RouteContext*   {.gcsafe.}  = ref object
+        req*                : RouteRequest
+        res*                : RouteResponse
+        user*               : AuthedUser
+        middlewares*        : seq[Middleware]
+        subRouteContext     : string
+    ErrorHandler*  {.gcsafe.} = proc (ex: ref Exception): RouteHandler {.gcsafe.}
+    Middleware*     = ref object of RootObj
+        before*     : RouteHandler
+        after*      : RouteHandler
 
 let mimeDB = newMimetypes()
-# 
 let abort* = RouteResult.none
 
+########## generate handler
 template handler*(c, f, actions:untyped): untyped =
     var result = 
         proc (next: RouteFunc): RouteFunc =
@@ -46,8 +63,6 @@ template rf*(c, actions: untyped): untyped =
             var c = ctx
             actions
     result
-    
-let through* : RouteHandler = handler(c,n) do:return n c
 
 # next bind
 proc `>=>`*(h1,h2: RouteHandler): RouteHandler =
@@ -57,7 +72,8 @@ proc `>=>`*(h1,h2: RouteHandler): RouteHandler =
         return proc(ctx: RouteContext): RouteResult = 
             return f1 ctx
 
-# end of handler
+########## context procs
+
 proc setHeader*(ctx: RouteContext, key, val: string): void =
     ctx.res.headers.add(key, val)
 
@@ -86,19 +102,21 @@ proc getCookie*(ctx: RouteContext, key: string): string =
             result = kv[1]
             break
 
-
 proc getMiddleware*[T](ctx: RouteContext): T =
     let mx = ctx.middlewares.filter do (m:Middleware) -> bool: (m of T)
     if not mx.any(proc(m:Middleware):bool = true) :
         return nil
     return T(mx[0])
     
-            
-            
+proc withSubRoute*(ctx: RouteContext, path: string): string =
+    if strutils.isNilOrWhitespace ctx.subRouteContext:
+        return path
+    return ctx.subRouteContext.joinPath path
+proc updateSubRoute*(ctx: RouteContext, path: string) =
+    ctx.subRouteContext = ctx.withSubRoute path
         
 
-
-### context utils
+########## end of handler
 proc resp*(ctx: RouteContext, code: HttpCode, content: string): RouteResult =
     ctx.res.code = code
     ctx.res.body = content
@@ -136,11 +154,3 @@ proc sendfile*(ctx: RouteContext, filePath: string): RouteResult =
     ctx.res.contentFilePath = filePath
     ctx.res.code = Http200
     return RouteResult.find
-
-proc withSubRoute*(ctx: RouteContext, path: string): string =
-    if strutils.isNilOrWhitespace ctx.subRouteContext:
-        return path
-    return ctx.subRouteContext.joinPath path
-proc updateSubRoute*(ctx: RouteContext, path: string) =
-    ctx.subRouteContext = ctx.withSubRoute path
-        

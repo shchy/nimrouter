@@ -8,8 +8,7 @@ import
     cgi,
     os, uri, md5, times
 import 
-    core,
-    utils
+    context
 
 # varargs to seq
 proc `@`[T](xs:openArray[T]): seq[T] = 
@@ -17,6 +16,8 @@ proc `@`[T](xs:openArray[T]): seq[T] =
     for x in xs:
         s.add x
     return s
+
+########## routing handlers
 
 # choose func until not abort
 proc chooseFuncs(funcs:seq[RouteFunc]): RouteFunc = 
@@ -48,8 +49,6 @@ proc choose*(handlers: varargs[RouteHandler]): RouteHandler =
         rf(ctx) do:
             return chooseFuncs(funcs) ctx
 
-### filters
-
 # filter by context
 proc filter*(isMatch: proc(ctx:RouteContext): bool): RouteHandler =
     handler(ctx, next) do :
@@ -59,22 +58,23 @@ proc filter*(isMatch: proc(ctx:RouteContext): bool): RouteHandler =
             return abort
 
 # all
-let NOTFOUND*   = filter(rf(_) do: return true)
+let NOTFOUND*   = filter(rf(_) do: true)
 
 # httpmethod filter
-let HEAD*       = filter(rf(ctx) do: return ctx.req.reqMethod == HttpHead)
-let GET*        = filter(rf(ctx) do: return ctx.req.reqMethod == HttpGet)
-let POST*       = filter(rf(ctx) do: return ctx.req.reqMethod == HttpPost)
-let PUT*        = filter(rf(ctx) do: return ctx.req.reqMethod == HttpPut)
-let DELETE*     = filter(rf(ctx) do: return ctx.req.reqMethod == HttpDelete)
-let PATCH*      = filter(rf(ctx) do: return ctx.req.reqMethod == HttpPatch)
-let TRACE*      = filter(rf(ctx) do: return ctx.req.reqMethod == HttpTrace)
-let OPTIONS*    = filter(rf(ctx) do: return ctx.req.reqMethod == HttpOptions)
-let CONNECT*    = filter(rf(ctx) do: return ctx.req.reqMethod == HttpConnect)
+let HEAD*       = filter(rf(ctx) do: ctx.req.reqMethod == HttpHead)
+let GET*        = filter(rf(ctx) do: ctx.req.reqMethod == HttpGet)
+let POST*       = filter(rf(ctx) do: ctx.req.reqMethod == HttpPost)
+let PUT*        = filter(rf(ctx) do: ctx.req.reqMethod == HttpPut)
+let DELETE*     = filter(rf(ctx) do: ctx.req.reqMethod == HttpDelete)
+let PATCH*      = filter(rf(ctx) do: ctx.req.reqMethod == HttpPatch)
+let TRACE*      = filter(rf(ctx) do: ctx.req.reqMethod == HttpTrace)
+let OPTIONS*    = filter(rf(ctx) do: ctx.req.reqMethod == HttpOptions)
+let CONNECT*    = filter(rf(ctx) do: ctx.req.reqMethod == HttpConnect)
+
 
 # path filter
 proc route*(path: string): RouteHandler =
-    return filter(rf(ctx) do: return ctx.req.url.path == ctx.withSubRoute path )
+    filter(rf(ctx) do: ctx.req.url.path == ctx.withSubRoute path )
 
 const urlParamRegex = r"{\s?(\w+?)\s?:\s?(int|string|float)\s?}"
 # path filter with url parameter
@@ -125,7 +125,55 @@ proc routep*(path: string): RouteHandler =
             except:
                 return abort
         return next ctx
-        
+
+proc subRoute*(path: string, handlers: openarray[RouteHandler]): RouteHandler =
+    let hs = @handlers
+    var h : RouteHandler
+    if hs.len() == 0:
+        h = handler(c, n) do: return n c 
+    elif hs.len() == 1:
+        h = hs[0]
+    else:
+        h = choose(hs)
+
+    handler(ctx, next) do:
+        if not ctx.req.url.path.startsWith(ctx.withSubRoute path):
+            return abort
+        ctx.updateSubRoute path
+        let f = h next
+        return f ctx
+
+
+########## utils handlers 
+
+# cacheable
+proc isCached*(ctx: RouteContext, etag: string, maxAge: int): bool = 
+    ctx.setHeader("Cache-Control", "max-age="& $maxage)
+    ctx.setHeader("ETag", etag)
+    let etagInHeader = ctx.getHeader("If-None-Match")
+    return etagInHeader.contains(etag)
+
+proc asCacheable*(getEtag: proc(): string, maxAge: int): RouteHandler =
+    handler(ctx, next) do:
+        let etag = getEtag()
+        if ctx.isCached(etag, maxAge):
+            return ctx.resp(Http304, "Not Modified")
+        return next ctx
+
+proc code*(code: HttpCode): RouteHandler = 
+    handler(ctx) do: ctx.code code
+    
+proc text*(content: string): RouteHandler = 
+    handler(ctx) do: ctx.text content
+
+proc html*(content: string): RouteHandler = 
+    handler(ctx) do: ctx.html content
+    
+proc redirect*(location: string, code: HttpCode = Http302): RouteHandler = 
+    handler(ctx) do: ctx.redirect(location, code)
+
+
+# file serve
 proc serveDir*(path,localPath: string, maxAge: int): RouteHandler =
     # todo path must be terminate "/"
     var localPath = localPath
@@ -151,20 +199,3 @@ proc serveDir*(path,localPath: string, maxAge: int): RouteHandler =
         if ctx.isCached(hash, maxAge):
             return ctx.code(Http304)
         return ctx.sendFile(localFilePath)
-
-proc subRoute*(path: string, handlers: openarray[RouteHandler]): RouteHandler =
-    let hs = @handlers
-    var h : RouteHandler
-    if hs.len() == 0:
-        h = through
-    elif hs.len() == 1:
-        h = hs[0]
-    else:
-        h = choose(hs)
-
-    handler(ctx, next) do:
-        if not ctx.req.url.path.startsWith(ctx.withSubRoute path):
-            return abort
-        ctx.updateSubRoute path
-        let f = h next
-        return f ctx

@@ -25,3 +25,9 @@ proc clone*(res: RouteResponse): RouteResponse =
         headers: headers,
         contentFilePath: contentFilePath
     )
+    
+proc clear*(res: RouteResponse) =
+    res.code = Http500
+    res.body = ""
+    res.headers.clear()
+    res.contentFilePath = ""
