@@ -182,12 +182,15 @@ proc isCached*(ctx: RouteContext, etag: string, maxAge: int): bool =
     let etagInHeader = ctx.getHeader("If-None-Match")
     return etagInHeader.contains(etag)
 
-proc asCacheable*(getEtag: proc(): string, maxAge: int): RouteHandler =
+proc asCacheable*(getEtag: proc(): string, maxAge: int = 0): RouteHandler =
     handler(ctx, next) do:
         let etag = getEtag()
         if ctx.isCached(etag, maxAge):
             return ctx.resp(Http304, "Not Modified")
         return next ctx
+
+proc resp*(code: HttpCode, content: string): RouteHandler = 
+    handler(ctx) do: ctx.resp(code, content)    
 
 proc code*(code: HttpCode): RouteHandler = 
     handler(ctx) do: ctx.code code
@@ -203,7 +206,7 @@ proc redirect*(location: string, code: HttpCode = Http302): RouteHandler =
 
 
 # file serve
-proc serveDir*(path,localPath: string, maxAge: int): RouteHandler =
+proc serveDir*(path,localPath: string, maxAge: int = 0): RouteHandler =
     # todo path must be terminate "/"
     var localPath = localPath
     if not localPath.isAbsolute():
