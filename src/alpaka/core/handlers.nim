@@ -10,52 +10,54 @@ import
 import 
     context
 
-# varargs to seq
-proc `@`[T](xs:openArray[T]): seq[T] = 
-    var s: seq[T] = @[]
-    for x in xs:
-        s.add x
-    return s
-
-
 ########## generate handler
 template handler*(c, f, actions:untyped): untyped =
-    var result = 
+    var result = (
         proc (next: RouteFunc): RouteFunc =
             var f = next
             return proc(ctx: RouteContext): RouteResult =
                 var c = ctx
                 actions
+    )
     result
 
 template handler*(c, actions:untyped): untyped =
-    var result = 
+    var result = (
         proc (next: RouteFunc): RouteFunc =
             return proc(ctx: RouteContext): RouteResult =
                 var c = ctx
                 actions
+    )
     result
 
 template rf*(c, actions: untyped): untyped =
-    var result = 
+    var result = (
         proc(ctx: RouteContext): untyped =
             var c = ctx
             actions
+    )
     result
 
+# next bind
+proc `>=>`*(h1,h2: RouteHandler): RouteHandler =
+    return proc(final: RouteFunc): RouteFunc =
+        let f2 = h2 final
+        let f1 = h1 f2
+        rf(ctx) do:  
+            f1 ctx
 ########## routing handlers
 
 # choose func until not abort
 proc chooseFuncs(funcs:seq[RouteFunc]): RouteFunc = 
     rf(ctx) do:
         if funcs.len == 0:
-            return abort
+            return RouteResult.none
         
         let tempResponse = ctx.res.clone()
         let tempUrlParams = ctx.req.urlParams.clone()
         let subRouteContext = ctx.subRouteContext
         let res = funcs[0] ctx
-        if res != abort:
+        if res != RouteResult.none:
             return res
         
         # reset response
@@ -81,7 +83,7 @@ proc filter*(isMatch: proc(ctx:RouteContext): bool): RouteHandler =
         if isMatch ctx:
             return next ctx
         else:
-            return abort
+            return RouteResult.none
 
 # all
 let NOTFOUND*   = filter(rf(_) do: true)
@@ -112,7 +114,7 @@ proc routep*(path: string): RouteHandler =
         let expectedSegments = (ctx.withSubRoute path).split("/")
         let segemnts = ctx.req.url.path.split("/")
         if expectedSegments.len() != segemnts.len():
-            return abort
+            return RouteResult.none
             
         let zipped = 
             expectedSegments.zip(segemnts)
@@ -127,12 +129,12 @@ proc routep*(path: string): RouteHandler =
 
             let maybe = expect.match(re urlParamRegex)
             if maybe.isNone():
-                return abort
+                return RouteResult.none
                 
             let match = opt.get maybe
             let captures = match.captures().toSeq()
             if captures.len() != 2:
-                return abort
+                return RouteResult.none
                 
             let name = captures[0]
             let typeName = captures[1]
@@ -146,17 +148,17 @@ proc routep*(path: string): RouteHandler =
                     of "string":
                         discard
                     else: 
-                        return abort    
+                        return RouteResult.none    
                 ctx.req.urlParams.setParam(decodeUrl name, decodeUrl segment)
             except:
-                return abort
+                return RouteResult.none
         return next ctx
 
 proc subRoute*(path: string, handlers: openarray[RouteHandler]): RouteHandler =
     let hs = @handlers
     var h : RouteHandler
     if hs.len() == 0:
-        h = handler(c, n) do: return n c 
+        h = handler(c, n) do: n c 
     elif hs.len() == 1:
         h = hs[0]
     else:
@@ -164,7 +166,7 @@ proc subRoute*(path: string, handlers: openarray[RouteHandler]): RouteHandler =
 
     handler(ctx, next) do:
         if not ctx.req.url.path.startsWith(ctx.withSubRoute path):
-            return abort
+            return RouteResult.none
         ctx.updateSubRoute path
         let f = h next
         return f ctx
@@ -208,7 +210,7 @@ proc serveDir*(path,localPath: string, maxAge: int): RouteHandler =
     handler(ctx) do:
         let routePath = ctx.withSubRoute path
         if not ctx.req.url.path.startsWith(routePath):
-            return abort
+            return RouteResult.none
         
         let reqFilePath = 
             decodeUrl ctx.req.url.path[routePath.len()..ctx.req.url.path.len()-1]
@@ -218,7 +220,7 @@ proc serveDir*(path,localPath: string, maxAge: int): RouteHandler =
             return ctx.code Http403
 
         if not existsFile localFilePath:
-            return abort
+            return RouteResult.none
             
         let fileInfo = os.getFileInfo(localFilePath)
         let hash = md5.getMD5( localFilePath & $(fileInfo.lastWriteTime) )

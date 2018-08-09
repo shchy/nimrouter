@@ -18,13 +18,14 @@ export
     
 type
     RouteResult*    = enum 
-        none, find 
+        none, 
+        find 
     RouteFunc*                  = proc (ctx:RouteContext): RouteResult
     RouteHandler*   {.gcsafe.}  = proc (f:RouteFunc): RouteFunc
-    AuthedUser* = ref object
-        id*     : string
-        name*   : string
-        role*   : seq[string]  
+    AuthedUser*                 = ref object
+        id*                 : string
+        name*               : string
+        role*               : seq[string]  
     RouteContext*   {.gcsafe.}  = ref object
         req*                : RouteRequest
         res*                : RouteResponse
@@ -32,21 +33,11 @@ type
         middlewares*        : seq[Middleware]
         subRouteContext*    : string
     ErrorHandler*  {.gcsafe.} = proc (ex: ref Exception): RouteHandler {.gcsafe.}
-    Middleware*     = ref object of RootObj
-        before*     : RouteHandler
-        after*      : RouteHandler
+    Middleware*                 = ref object of RootObj
+        before*             : RouteHandler
+        after*              : RouteHandler
 
 let mimeDB = newMimetypes()
-let abort* = RouteResult.none
-
-
-# next bind
-proc `>=>`*(h1,h2: RouteHandler): RouteHandler =
-    return proc(final: RouteFunc): RouteFunc =
-        let f2 = h2 final
-        let f1 = h1 f2
-        return proc(ctx: RouteContext): RouteResult = 
-            return f1 ctx
 
 ########## context procs
 
@@ -118,7 +109,7 @@ proc redirect*(ctx: RouteContext, path: string, code: HttpCode = Http302 ): Rout
 
 proc sendfile*(ctx: RouteContext, filePath: string): RouteResult =
     if not existsFile(filePath):
-        return abort 
+        return RouteResult.none 
     if not os.getFilePermissions(filePath).contains(os.fpOthersRead):
         return ctx.code Http403
     let ext = (filePath).splitFile.ext

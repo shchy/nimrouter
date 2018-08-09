@@ -42,7 +42,7 @@ let mustBeAuth* =
     handler(ctx, next) do:
         let basicAuth = getMiddleware[BasicAuth](ctx)
         if basicAuth == nil :
-            return abort
+            return RouteResult.none
         
         if ctx.user == nil:
             ctx.setHeader("WWW-Authenticate", "Basic realm=" & basicAuth.realm)

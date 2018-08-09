@@ -46,7 +46,7 @@ let mustBeAuth* =
     handler(ctx, next) do:
         let sessionAuth = getMiddleware[SessionAuth](ctx)
         if sessionAuth == nil :
-            return abort
+            return RouteResult.none
         if ctx.user == nil:
             return ctx.redirect sessionAuth.redirectPath
         return next ctx
