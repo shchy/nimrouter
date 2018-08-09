@@ -15,7 +15,7 @@ export
     request,
     response,
     params
-
+    
 type
     RouteResult*    = enum 
         none, find 
@@ -30,7 +30,7 @@ type
         res*                : RouteResponse
         user*               : AuthedUser
         middlewares*        : seq[Middleware]
-        subRouteContext     : string
+        subRouteContext*    : string
     ErrorHandler*  {.gcsafe.} = proc (ex: ref Exception): RouteHandler {.gcsafe.}
     Middleware*     = ref object of RootObj
         before*     : RouteHandler
@@ -39,30 +39,6 @@ type
 let mimeDB = newMimetypes()
 let abort* = RouteResult.none
 
-########## generate handler
-template handler*(c, f, actions:untyped): untyped =
-    var result = 
-        proc (next: RouteFunc): RouteFunc =
-            var f = next
-            return proc(ctx: RouteContext): RouteResult =
-                var c = ctx
-                actions
-    result
-
-template handler*(c, actions:untyped): untyped =
-    var result = 
-        proc (next: RouteFunc): RouteFunc =
-            return proc(ctx: RouteContext): RouteResult =
-                var c = ctx
-                actions
-    result
-
-template rf*(c, actions: untyped): untyped =
-    var result = 
-        proc(ctx: RouteContext): untyped =
-            var c = ctx
-            actions
-    result
 
 # next bind
 proc `>=>`*(h1,h2: RouteHandler): RouteHandler =

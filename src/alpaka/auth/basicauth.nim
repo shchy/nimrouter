@@ -5,6 +5,7 @@ import
     sequtils
 import 
     ../core/context,
+    ../core/handlers,
     ../router/router
 
 type

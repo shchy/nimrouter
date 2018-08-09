@@ -17,6 +17,32 @@ proc `@`[T](xs:openArray[T]): seq[T] =
         s.add x
     return s
 
+
+########## generate handler
+template handler*(c, f, actions:untyped): untyped =
+    var result = 
+        proc (next: RouteFunc): RouteFunc =
+            var f = next
+            return proc(ctx: RouteContext): RouteResult =
+                var c = ctx
+                actions
+    result
+
+template handler*(c, actions:untyped): untyped =
+    var result = 
+        proc (next: RouteFunc): RouteFunc =
+            return proc(ctx: RouteContext): RouteResult =
+                var c = ctx
+                actions
+    result
+
+template rf*(c, actions: untyped): untyped =
+    var result = 
+        proc(ctx: RouteContext): untyped =
+            var c = ctx
+            actions
+    result
+
 ########## routing handlers
 
 # choose func until not abort

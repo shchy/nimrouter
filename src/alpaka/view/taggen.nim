@@ -10,11 +10,11 @@ proc escape*(v: string): string =
     .replace("\"", "&quot;")
     .replace("'", "&#x27;")
     .replace("\\", "&#x2F;")
-     
+
 proc getIdent(e: NimNode): string =
     case e.kind
         of nnkIdent: 
-            result = e.strVal
+            result = $e
         of nnkAccQuoted:
             result = getIdent(e[0])
         else: error("is not ident" & toStrLit(e).strVal)
@@ -66,7 +66,7 @@ template tag*(name: untyped): untyped =
             # <tagname a="b" c="d" e>inners</tagname>
             result.add(newStrLitNode("</" & escape(tagname) & ">"))
 
-        result = nestList(ident("&"), result)
+        result = nestList(toNimIdent("&"), result)
 
 include tags
 

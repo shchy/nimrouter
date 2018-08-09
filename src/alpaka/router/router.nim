@@ -3,7 +3,8 @@ import
     httpcore,
     sequtils
 import
-    ../core/context
+    ../core/context,
+    ../core/handlers
 
 type 
     Router*        = ref object of RootObj
