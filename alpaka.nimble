@@ -11,7 +11,7 @@ requires "nim >= 0.18.0"
 
 binDir        = "bin"
 srcDir        = "src"
-skipDirs      = @["example", "test"]
+skipDirs      = @["example", "tests"]
 bin           = @["alpaka"]
 
 task clean, "clean":
@@ -19,8 +19,10 @@ task clean, "clean":
     exec "rm -rf ./example/sample00/app"
     exec "rm -rf ./example/sample01/nimcache"
     exec "rm -rf ./example/sample01/app"
-    exec "rm -rf ./alpaka"
-    exec "rm -rf ./nimcache"
+    exec "rm -rf ./bin"
+    exec "rm -rf ./src/nimcache"
+    exec "rm -rf ./tests/nimcache"
+    exec "rm -rf ./tests/tester"
 task ex00, "exec sample00":
     exec "rm -f ./example/sample00/app"
     exec "nimble develop -y"
