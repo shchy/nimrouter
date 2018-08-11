@@ -17,25 +17,25 @@ export
     params
     
 type
-    RouteResult*    = enum 
+    RouteResult* = enum 
         none, 
         find 
-    RouteFunc*                  = proc (ctx:RouteContext): RouteResult
-    RouteHandler*   {.gcsafe.}  = proc (f:RouteFunc): RouteFunc
-    AuthedUser*                 = ref object
-        id*                 : string
-        name*               : string
-        role*               : seq[string]  
-    RouteContext*   {.gcsafe.}  = ref object
-        req*                : RouteRequest
-        res*                : RouteResponse
-        user*               : AuthedUser
-        middlewares*        : seq[Middleware]
-        subRouteContext*    : string
-    ErrorHandler*  {.gcsafe.} = proc (ex: ref Exception): RouteHandler {.gcsafe.}
-    Middleware*                 = ref object of RootObj
-        before*             : RouteHandler
-        after*              : RouteHandler
+    RouteFunc* = proc (ctx:RouteContext): RouteResult
+    RouteHandler* = proc (f:RouteFunc): RouteFunc
+    ErrorHandler* = proc (ex: ref Exception): RouteHandler
+    AuthedUser* = ref object
+        id*     : string
+        name*   : string
+        role*   : seq[string]  
+    RouteContext* = ref object
+        req*            : RouteRequest
+        res*            : RouteResponse
+        user*           : AuthedUser
+        middlewares*    : seq[Middleware]
+        subRouteContext*: string
+    Middleware* = ref object of RootObj
+        before* : RouteHandler
+        after*  : RouteHandler
 
 let mimeDB = newMimetypes()
 
@@ -47,15 +47,16 @@ proc setHeader*(ctx: RouteContext, key, val: string): void =
 proc getHeader*(ctx: RouteContext, key: string): string =
     return ctx.req.headers.getOrDefault(key)
 
-proc setCookie*(ctx: RouteContext, key, val: string, maxAge: int, path: string, isSecure, isHttpOnly: bool): void =
-    var val = key & "=" & val & "; Max-Age=" & $maxAge
-    if not path.isNilOrWhitespace:
-        val.add("; Path=" & path)
+proc setCookie*(ctx: RouteContext, key, val: string, maxAge: int = 0, isSecure, isHttpOnly: bool = false, path: string = nil): void =
+    var val = key & "=" & val
+    if maxAge != 0:
+        val.add("; Max-Age=" & $maxAge)
     if isSecure:
         val.add("; secure")
     if isHttpOnly:
         val.add("; httponly")
-    
+    if not path.isNilOrWhitespace:
+        val.add("; Path=" & path)
     ctx.setHeader("Set-Cookie", val)
 
 proc getCookie*(ctx: RouteContext, key: string): string =

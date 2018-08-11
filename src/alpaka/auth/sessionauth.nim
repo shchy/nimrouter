@@ -63,8 +63,9 @@ proc signin*(ctx: RouteContext, id, pass: string): bool =
     ctx.user = user
     let hash = md5.getMD5(sessionAuth.hashKey & id)
     ctx.setCookie(sessionAuth.cookieName, hash
-                , sessionAuth.maxage, sessionAuth.path
-                , sessionAuth.isSecure, sessionAuth.isHttpOnly) 
+                , sessionAuth.maxage
+                , sessionAuth.isSecure, sessionAuth.isHttpOnly
+                , sessionAuth.path) 
     sessionAuth.cache[hash] = (id: id, pass: pass)
     return true
 

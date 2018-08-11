@@ -1,4 +1,3 @@
-# depend on asynchttpserver is only this  
 import 
     httpcore,
     sequtils
@@ -7,7 +6,7 @@ import
     ../core/handlers
 
 type 
-    Router*        = ref object of RootObj
+    Router* = ref object of RootObj
         handler*        : RouteHandler
         errorHandler*   : ErrorHandler
         middlewares*    : seq[Middleware] 
@@ -35,6 +34,8 @@ proc routing*(router: Router, ctx: RouteContext): RouteContext =
     if errorHandler == nil:
         errorHandler = defaultErrorHandler
     
+    ctx.middlewares = router.middlewares
+
     let through : RouteHandler = handler(c,n) do:return n c
 
 

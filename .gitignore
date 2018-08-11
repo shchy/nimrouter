@@ -1,4 +1,5 @@
 **/nimcache
 nimsuggest.log
 example/*/app
+tests/tester
 bin/*

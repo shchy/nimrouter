@@ -136,20 +136,21 @@ proc routep*(path: string): RouteHandler =
             if captures.len() != 2:
                 return RouteResult.none
                 
-            let name = captures[0]
-            let typeName = captures[1]
+            let name = decodeUrl captures[0]
+            let typeName = decodeUrl captures[1]
+            let value = decodeUrl segment
             
             try:
                 case typeName:
                     of "int":
-                        discard segment.parseInt()
+                        discard value.parseInt()
                     of "float":
-                        discard segment.parseFloat()
+                        discard value.parseFloat()
                     of "string":
                         discard
                     else: 
                         return RouteResult.none    
-                ctx.req.urlParams.setParam(decodeUrl name, decodeUrl segment)
+                ctx.req.urlParams.setParam(name, value)
             except:
                 return RouteResult.none
         return next ctx
@@ -181,12 +182,15 @@ proc isCached*(ctx: RouteContext, etag: string, maxAge: int): bool =
     let etagInHeader = ctx.getHeader("If-None-Match")
     return etagInHeader.contains(etag)
 
-proc asCacheable*(getEtag: proc(): string, maxAge: int): RouteHandler =
+proc asCacheable*(getEtag: proc(): string, maxAge: int = 0): RouteHandler =
     handler(ctx, next) do:
         let etag = getEtag()
         if ctx.isCached(etag, maxAge):
             return ctx.resp(Http304, "Not Modified")
         return next ctx
+
+proc resp*(code: HttpCode, content: string): RouteHandler = 
+    handler(ctx) do: ctx.resp(code, content)    
 
 proc code*(code: HttpCode): RouteHandler = 
     handler(ctx) do: ctx.code code
@@ -202,7 +206,7 @@ proc redirect*(location: string, code: HttpCode = Http302): RouteHandler =
 
 
 # file serve
-proc serveDir*(path,localPath: string, maxAge: int): RouteHandler =
+proc serveDir*(path,localPath: string, maxAge: int = 0): RouteHandler =
     # todo path must be terminate "/"
     var localPath = localPath
     if not localPath.isAbsolute():
