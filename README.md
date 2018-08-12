@@ -86,3 +86,19 @@ let handler = choose(
     route("/cache/") >=> asCacheable(proc():string ="etag") >=> text "cache me",    
 )
 ```
+
+
+## sub route
+
+```nim
+let postHandler = handler(ctx) do:
+    let value = ctx.req.getFormParam "text"
+    return ctx.text value 
+
+let handler = choose(
+    subRoute("/sub/",[
+        route("/") >=> GET >=> text "hello",
+        route("/") >=> POST >=> postHandler,
+    ]) 
+)
+```
