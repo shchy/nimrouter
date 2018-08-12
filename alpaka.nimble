@@ -22,7 +22,10 @@ task clean, "clean":
     exec "rm -rf ./bin"
     exec "rm -rf ./src/nimcache"
     exec "rm -rf ./tests/nimcache"
-    exec "rm -rf ./tests/tester"
+    exec "rm -rf ./tests/testcommon"
+    exec "rm -rf ./tests/testcontext"
+    exec "rm -rf ./tests/testhandler"
+
 task ex00, "exec sample00":
     exec "rm -f ./example/sample00/app"
     exec "nimble develop -y"
