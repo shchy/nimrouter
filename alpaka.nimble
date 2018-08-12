@@ -2,7 +2,7 @@
 
 version       = "0.1.0"
 author        = "shch"
-description   = "giraffe copy"
+description   = "giraffe[F#] copy"
 license       = "MIT"
 
 # Dependencies
