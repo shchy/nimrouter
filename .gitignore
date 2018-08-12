@@ -1,8 +1,6 @@
 **/nimcache
 nimsuggest.log
 example/*/app
-tests/testbasicauth
-tests/testcommon
-tests/testcontext
-tests/testhandler
+tests/*
+!tests/*.nim
 bin/*
