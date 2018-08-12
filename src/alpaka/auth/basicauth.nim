@@ -30,6 +30,9 @@ proc before(getUser: GetUser): RouteHandler =
             return next ctx
             
         let idWithPass = (base64.decode splited[1]).split(":")
+        if idWithPass.len() != 2:
+            return next ctx
+            
         let id = idWithPass[0]
         let password = idWithPass[1]
         let user = getUser(id, password)
