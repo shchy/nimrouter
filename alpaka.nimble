@@ -26,6 +26,7 @@ task clean, "clean":
     exec "rm -rf ./tests/testcontext"
     exec "rm -rf ./tests/testhandler"
     exec "rm -rf ./tests/testbasicauth"
+    exec "rm -rf ./tests/testsessionauth"
 
 task ex00, "exec sample00":
     exec "rm -f ./example/sample00/app"

@@ -16,7 +16,7 @@ suite "test sessionauth":
         GET >=> route("/auth/") >=> mustBeAuth >=> (handler(ctx) do: ctx.text "hello " & ctx.user.name),
         GET >=> route("/signin") >=> (handler(ctx) do: 
             if ctx.signin(ctx.req.getQueryParam "id",ctx.req.getQueryParam "pass"):
-                return ctx.redirect "/auth/"
+                return ctx.redirect("/auth/", Http303)
             return ctx.code Http401            
             ),
     )
@@ -53,14 +53,16 @@ suite "test sessionauth":
 
         context = router.routingTest(HttpGet, "/signin?id=tester&pass=password")
         check(context.res.body == "")
-        check(context.res.code == Http302)
+        check(context.res.code == Http303)
         check(context.res.headers["Location"] == "/auth/")
         check(isNilOrWhitespace context.res.contentFilePath)
 
-
-        context = router.routingTest(HttpGet, "/auth/")
-        check(context.res.body == "")
-        check(context.res.code == Http302)
-        check(context.res.headers["Location"] == "/")
+        let authkey = 
+            sequtils.filter(seq[string](context.res.headers["set-cookie"]),
+            proc (s:string): bool = s.contains("cookieName"))[0]
+            .split(";")[0].split("=")[1]
+        context = router.routingTest(HttpGet, "/auth/", "", (key:"cookie", value: "cookieName=" & authkey))
+        check(context.res.body == "hello tester")
+        check(context.res.code == Http200)
         check(isNilOrWhitespace context.res.contentFilePath)
         
