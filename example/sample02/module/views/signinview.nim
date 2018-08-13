@@ -3,7 +3,6 @@ import
     layout
 
 
-proc view(): string = 
-    html(lang="en",
-        ""
-    )
+proc view*(): string = 
+    layout("", "hello")
+    

@@ -1,6 +1,6 @@
 import
-    alpaka
-
+    alpaka,
+    views/signinview
 
 
 
@@ -9,5 +9,5 @@ import
 
 
 let handlers* = [
-    route("/") >=> text "hello"
+    route("/") >=> html view()
 ]
