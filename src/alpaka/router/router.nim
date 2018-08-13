@@ -22,13 +22,13 @@ proc addMiddleware*(router: Router, middleware: Middleware) =
     if router.middlewares == nil:
         router.middlewares = @[]
     router.middlewares.add(middleware)
-        
+
 proc defaultErrorHandler(ex: ref Exception): RouteHandler =
     handler(ctx) do: ctx.resp(Http500, "Internal Server Error")
 
 proc final*(ctx: RouteContext): RouteResult {.procvar.} =
     RouteResult.find
-    
+
 proc routing*(router: Router, ctx: RouteContext): RouteContext =
     var errorHandler = router.errorHandler
     if errorHandler == nil:
@@ -77,6 +77,13 @@ proc routing*(router: Router, ctx: RouteContext): RouteContext =
         return ctx
 
 
+proc run*(router: Router): void =
+    let runners = filter(router.middlewares.map do (m:Middleware) -> proc():void: m.run
+                        , proc (h: proc():void): bool = h != nil)
+    if runners.len() < 0:
+        return
+    let runner = runners[0]
+    runner()
     
 
 
