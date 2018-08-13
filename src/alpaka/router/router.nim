@@ -7,9 +7,11 @@ import
 
 type 
     Router* = ref object of RootObj
-        handler*        : RouteHandler
-        errorHandler*   : ErrorHandler
-        middlewares*    : seq[Middleware] 
+        handler         : RouteHandler
+        errorHandler    : ErrorHandler
+        middlewares     : seq[Middleware] 
+        buildedFunc     : RouteFunc
+        buildedAfter    : RouteFunc
         
 proc newRouter*(handler: RouteHandler, errorHandler: ErrorHandler = nil): Router =
     Router(
@@ -23,40 +25,52 @@ proc addMiddleware*(router: Router, middleware: Middleware) =
         router.middlewares = @[]
     router.middlewares.add(middleware)
 
-proc defaultErrorHandler(ex: ref Exception): RouteHandler =
-    handler(ctx) do: ctx.resp(Http500, "Internal Server Error")
+proc build*(router: Router): void =
+    if router.buildedFunc != nil:
+        return
 
-proc final*(ctx: RouteContext): RouteResult {.procvar.} =
-    RouteResult.find
-
-proc routing*(router: Router, ctx: RouteContext): RouteContext =
     var errorHandler = router.errorHandler
     if errorHandler == nil:
-        errorHandler = defaultErrorHandler
+        errorHandler = 
+            proc (ex: ref Exception): RouteHandler =
+                handler(ctx) do: ctx.resp(Http500, "Internal Server Error")
     
+    let through : RouteHandler = handler(c,n) do:return n c
+    
+    let before = filter(router.middlewares.map do (m:Middleware) -> RouteHandler: m.before
+                , proc (h: RouteHandler): bool = h != nil)
+                .foldl(a >=> b, through)
+    let after = filter(router.middlewares.map do (m:Middleware) -> RouteHandler: m.after
+                , proc (h: RouteHandler): bool = h != nil)
+                .foldl(a >=> b, through)
+
+    let handler = before >=> router.handler
+
+    let final = (rf(_) do: RouteResult.find)
+
+    router.buildedFunc = (handler final)
+    router.buildedAfter = (after final)
+
+
+
+proc routing*(router: Router, ctx: RouteContext): RouteContext =
+    
+    router.build()
+
     ctx.middlewares = router.middlewares
 
-    let through : RouteHandler = handler(c,n) do:return n c
-
+    let final = (rf(_) do: RouteResult.find)
 
     try:
-        let before = filter(router.middlewares.map do (m:Middleware) -> RouteHandler: m.before
-                        , proc (h: RouteHandler): bool = h != nil)
-                        .foldl(a >=> b, through)
-        let after = filter(router.middlewares.map do (m:Middleware) -> RouteHandler: m.after
-                        , proc (h: RouteHandler): bool = h != nil)
-                        .foldl(a >=> b, through)
         
-        let handler = before >=> router.handler
-
-        let res = (handler final) ctx
+        let res = router.buildedFunc ctx
 
         if res == RouteResult.none:
             ctx.res.clear()
             discard ctx.resp(Http404, "404 NotFound")
             return ctx
         
-        discard (after final) ctx
+        discard router.buildedAfter ctx
         
         return ctx
     except:
@@ -65,10 +79,10 @@ proc routing*(router: Router, ctx: RouteContext): RouteContext =
         echo "Exception" & repr(ex) & " message:" & msg
         ctx.res.clear()
 
-        if errorHandler == nil:
+        if router.errorHandler == nil:
             discard ctx.resp(Http500, "Internal Server Error")
             return ctx
-        let handler = errorHandler ex
+        let handler = router.errorHandler ex
         let res = (handler final) ctx
         if res == RouteResult.none:
             discard ctx.resp(Http500, "Internal Server Error")

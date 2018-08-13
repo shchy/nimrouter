@@ -89,4 +89,3 @@ proc useAsyncHttpServer*(router: Router, port: int): Router =
     )
     router.addMiddleware(middleware)
     return router
-        
