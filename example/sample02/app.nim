@@ -1,9 +1,11 @@
 import 
-    alpaka
+    alpaka,
+    module/signin
 
 
 let handler = choose(
-    route("/") >=> asCacheable(proc():string="etag") >=> text "hello"
+    subRoute("/", signin.handlers)
+    # route("/") >=> asCacheable(proc():string="etag") >=> text "hello"
 )
 
 handler
