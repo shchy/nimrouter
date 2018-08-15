@@ -99,6 +99,8 @@ let TRACE*      = filter(rf(ctx) do: ctx.req.reqMethod == HttpTrace)
 let OPTIONS*    = filter(rf(ctx) do: ctx.req.reqMethod == HttpOptions)
 let CONNECT*    = filter(rf(ctx) do: ctx.req.reqMethod == HttpConnect)
 
+let isNotAuthed* = filter(rf(ctx) do: ctx.user == nil)
+let isAuthed* = filter(rf(ctx) do: ctx.user != nil)
 
 # path filter
 proc route*(path: string): RouteHandler =

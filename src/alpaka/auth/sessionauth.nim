@@ -18,7 +18,7 @@ type
         redirectPath: string
         hashKey     : string 
         maxage      : int 
-        path        : string 
+        cookiepath  : string 
         isSecure    : bool 
         isHttpOnly  : bool
 
@@ -65,7 +65,7 @@ proc signin*(ctx: RouteContext, id, pass: string): bool =
     ctx.setCookie(sessionAuth.cookieName, hash
                 , sessionAuth.maxage
                 , sessionAuth.isSecure, sessionAuth.isHttpOnly
-                , sessionAuth.path) 
+                , sessionAuth.cookiepath) 
     sessionAuth.cache[hash] = (id: id, pass: pass)
     return true
 
@@ -82,8 +82,8 @@ proc signout*(ctx: RouteContext): void =
             
 proc useSessionAuth*(router: Router, getUser: GetUser
                     , redirectPath, cookieName, hashKey: string
-                    , maxage: int, path: string
-                    , isSecure, isHttpOnly: bool): Router =
+                    , maxage: int = 60 * 60 * 7, cookiepath: string = "/"
+                    , isSecure: bool = false, isHttpOnly: bool = true): Router =
     let middleware = SessionAuth(
         before      : before(getUser),
         after       : (handler(c,n) do : n c),
@@ -92,7 +92,7 @@ proc useSessionAuth*(router: Router, getUser: GetUser
         hashKey     : hashKey, 
         getUser     : getUser, 
         maxage      : maxage, 
-        path        : path, 
+        cookiepath  : cookiepath, 
         isSecure    : isSecure, 
         isHttpOnly  : isHttpOnly,
         cache       : initTable[string,tuple[id: string,pass: string]]()

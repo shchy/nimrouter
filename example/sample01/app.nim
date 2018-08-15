@@ -28,13 +28,9 @@ proc main() =
             GET >=> serveDir("/static/", "./static/", 60 * 60 * 24 * 7)
         )
     ).useSessionAuth(debugAuth, "/", "cookieName", "asdfghjk", 60 * 5, "/", false, true)
+    .useAsyncHttpServer(8080)
     #.useBasicAuth(debugAuth, "must be signin")
     
-    # bind router to asynchttpserver
-    proc cb(req:Request) {.async.} =
-        await r.bindAsyncHttpServer(req)
-
-    let server = newAsyncHttpServer(true, true)
-    waitfor server.serve(Port(8080), cb)
+    r.run()
 
 main()

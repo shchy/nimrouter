@@ -12,6 +12,10 @@ import
     ../core/context,
     router
 
+type
+    Server  = ref object of Middleware
+        discard
+    
 const FILE_READ_BUFFER_SIZE: int = 1024 * 1024 * 16
 
 proc sendFile(req: Request, code: HttpCode, headers: HttpHeaders, filePath: string) {.async.} =
@@ -70,5 +74,18 @@ proc bindAsyncHttpServer*(router: Router, req: Request): Future[void] {.gcsafe.}
     except:
         return req.respond(Http500, "Internal Server Error")
         
+proc run(router: Router, port: int): void =
 
-        
+    # bind router to asynchttpserver
+    proc cb(req:Request) {.async.} =
+        await router.bindAsyncHttpServer(req)
+
+    let server = newAsyncHttpServer()
+    waitfor server.serve(Port(port), cb)
+
+proc useAsyncHttpServer*(router: Router, port: int): Router =
+    let middleware = Server(
+        run         : proc():void =run(router, port)
+    )
+    router.addMiddleware(middleware)
+    return router

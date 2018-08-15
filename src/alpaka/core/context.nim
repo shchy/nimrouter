@@ -34,6 +34,7 @@ type
         middlewares*    : seq[Middleware]
         subRouteContext*: string
     Middleware* = ref object of RootObj
+        run*    : proc():void
         before* : RouteHandler
         after*  : RouteHandler
 
