@@ -19,54 +19,62 @@ proc getIdent(e: NimNode): string =
             result = getIdent(e[0])
         else: error("is not ident" & toStrLit(e).strVal)
 
+proc gen(x: NimNode): NimNode = 
+    # echo treerepr(x)
+    # echo macros.LineInfo
+
+    let tagName = getIdent(x[0])
+    let tails = x.toSeq()[1..<x.len()]#x.toSeq().filter do (n:NimNode) -> bool : n != x[0] 
+    let attrs = 
+        tails.filter do (n:NimNode) -> bool : 
+            n.kind == nnkExprEqExpr or n.kind == nnkAccQuoted
+    let inners =
+        tails.filter do (n:NimNode) -> bool :
+            not attrs.contains(n)
+
+    # <tagname        
+    result = newNimNode(nnkBracket, x)
+    result.add(newStrLitNode("<"))
+    result.add(newStrLitNode(escape(tagname)))
+
+    # <tagname a="b" c="d" e
+    for a in attrs:
+        case a.kind:
+            of nnkExprEqExpr: 
+                result.add(newStrLitNode(" "))
+                result.add(newStrLitNode(escape(getIdent(a[0])) ))
+                result.add(newStrLitNode("=\""))
+                result.add(a[1])
+                result.add(newStrLitNode("\""))
+            of nnkAccQuoted:
+                result.add(newStrLitNode(" "))
+                result.add(newStrLitNode(escape(getIdent(a[0]))))
+
+            # of nnkIdent: 
+            #     result.add(newStrLitNode(" "))
+            #     result.add(newStrLitNode(escape(getIdent(a)) ))
+            else: discard
+
+    # is any inner
+    if inners.len() == 0:
+        # <tagname a="b" c="d" e />
+        result.add(newStrLitNode(" />"))
+    else:
+        # <tagname a="b" c="d" e>
+        result.add(newStrLitNode(">"))
+        # <tagname a="b" c="d" e>inners
+        for inner in inners:
+            result.add(inner)
+        # <tagname a="b" c="d" e>inners</tagname>
+        result.add(newStrLitNode("</" & escape(tagname) & ">"))
+
+    result = nestList(toNimIdent("&"), result)
+
+
 template tag*(name: untyped): untyped =
     macro name*(x: varargs[untyped]): untyped =
         var x = callsite()
-        # echo treerepr(x)
-        # echo macros.LineInfo
-
-        let tagName = getIdent(x[0])
-        let tails = x.toSeq()[1..<x.len()]#x.toSeq().filter do (n:NimNode) -> bool : n != x[0] 
-        let attrs = 
-            tails.filter do (n:NimNode) -> bool : 
-                n.kind == nnkExprEqExpr #or n.kind == nnkIdent
-        let inners =
-            tails.filter do (n:NimNode) -> bool :
-                not attrs.contains(n)
-
-        # <tagname        
-        result = newNimNode(nnkBracket, x)
-        result.add(newStrLitNode("<"))
-        result.add(newStrLitNode(escape(tagname)))
-        
-        # <tagname a="b" c="d" e
-        for a in attrs:
-            case a.kind:
-                of nnkExprEqExpr: 
-                    result.add(newStrLitNode(" "))
-                    result.add(newStrLitNode(escape(getIdent(a[0])) ))
-                    result.add(newStrLitNode("=\""))
-                    result.add(a[1])
-                    result.add(newStrLitNode("\""))
-                # of nnkIdent: 
-                #     result.add(newStrLitNode(" "))
-                #     result.add(newStrLitNode(escape(getIdent(a)) ))
-                else: discard
-        
-        # is any inner
-        if inners.len() == 0:
-            # <tagname a="b" c="d" e />
-            result.add(newStrLitNode(" />"))
-        else:
-            # <tagname a="b" c="d" e>
-            result.add(newStrLitNode(">"))
-            # <tagname a="b" c="d" e>inners
-            for inner in inners:
-                result.add(inner)
-            # <tagname a="b" c="d" e>inners</tagname>
-            result.add(newStrLitNode("</" & escape(tagname) & ">"))
-
-        result = nestList(toNimIdent("&"), result)
+        result = gen(x)
 
 include tags
 
@@ -82,7 +90,7 @@ when isMainModule:
         pp("title", 
             `div`(class="container",
                 h1(class="","Home"),
-                label(name)
+                label(name, `aaa`)
             )
         ) 
     
