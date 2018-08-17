@@ -1,7 +1,9 @@
 import
     alpaka,
     alpaka/auth/sessionauth,
-    views/signinview
+    views/signinview,
+    ../service/datacontext,
+    sequtils
 
 let signin = handler(ctx) do:
     let id = ctx.req.getFormParam "id"
@@ -19,3 +21,13 @@ let handlers* = [
         POST >=> signin,
     )
 ]
+
+proc getUser*(id,pass: string): AuthedUser =
+    let users = getUsers().filter do (u:User) -> bool: u.id == id and u.password == pass
+    if users.len() <= 0:
+        return nil
+    return AuthedUser(
+        id: users[0].id,
+        name: users[0].name,
+        role: @[],
+    )
