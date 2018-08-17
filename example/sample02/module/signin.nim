@@ -1,9 +1,10 @@
 import
     alpaka,
     alpaka/auth/sessionauth,
-    views/signinview,
     ../service/datacontext,
     sequtils
+import 
+    ../service/models
 
 let signin = handler(ctx) do:
     let id = ctx.req.getFormParam "id"
@@ -13,10 +14,9 @@ let signin = handler(ctx) do:
         return ctx.redirect("/home/")
     return ctx.redirect("/")
 
-
 let handlers* = [
     route("/") >=> choose(
-        GET >=> isNotAuthed >=> html view(),
+        GET >=> isNotAuthed >=> view "views/signin.html",
         GET >=> isAuthed >=> redirect("/home/"),
         POST >=> signin,
     )

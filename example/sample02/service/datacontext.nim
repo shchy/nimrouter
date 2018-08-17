@@ -1,11 +1,8 @@
 import 
     sequtils
+import 
+    models
 
-type
-    User*   = object
-        id*       : string
-        name*     : string
-        password* : string
 
 
 proc getUsers*() : seq[User] =

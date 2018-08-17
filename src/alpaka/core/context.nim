@@ -123,3 +123,10 @@ proc sendfile*(ctx: RouteContext, filePath: string): RouteResult =
     ctx.res.contentFilePath = filePath
     ctx.res.code = Http200
     return RouteResult.find
+
+proc sendView*(ctx: RouteContext, filePath: string): RouteResult =
+    var localPath = filePath
+    if not localPath.isAbsolute():
+        localPath = $(parseUri(getAppDir()) / localPath)
+    
+    return ctx.sendfile($localPath)

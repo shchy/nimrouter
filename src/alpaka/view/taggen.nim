@@ -62,6 +62,7 @@ proc gen(x: NimNode): NimNode =
     else:
         # <tagname a="b" c="d" e>
         result.add(newStrLitNode(">"))
+
         # <tagname a="b" c="d" e>inners
         for inner in inners:
             result.add(inner)
@@ -79,6 +80,12 @@ template tag*(name: untyped): untyped =
 include tags
 
 when isMainModule:
+    proc bbb(): string =
+        var test = @[0,1,2,3,4,5]
+        let a = test.map(proc(a:int):string= $a).foldl(a & b)
+        a
+
+
     let pp = proc(t: string, b: string): string =
         html(a=t,
             head(
@@ -90,7 +97,9 @@ when isMainModule:
         pp("title", 
             `div`(class="container",
                 h1(class="","Home"),
-                label(name, `aaa`)
+                label(name, `aaa`),
+                bbb()
+                    # label(i)
             )
         ) 
     
