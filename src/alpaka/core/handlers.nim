@@ -157,7 +157,7 @@ proc routep*(path: string): RouteHandler =
                 return RouteResult.none
         return next ctx
 
-proc subRoute*(path: string, handlers: openarray[RouteHandler]): RouteHandler =
+proc subRoute*(path: string, handlers: varargs[RouteHandler]): RouteHandler =
     let hs = @handlers
     var h : RouteHandler
     if hs.len() == 0:
@@ -206,6 +206,8 @@ proc html*(content: string): RouteHandler =
 proc redirect*(location: string, code: HttpCode = Http302): RouteHandler = 
     handler(ctx) do: ctx.redirect(location, code)
 
+proc view*(filepath: string): RouteHandler = 
+    handler(ctx) do: ctx.sendView(filepath)
 
 # file serve
 proc serveDir*(path,localPath: string, maxAge: int = 0): RouteHandler =
