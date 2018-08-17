@@ -13,14 +13,11 @@ let handler = choose(
     ),    
 )
 
-let router = newRouter(handler)
+handler
+    .newRouter()
+    .useAsyncHttpServer(8080)
+    .run()
 
-# bind router to asynchttpserver
-proc cb(req:Request) {.async.} =
-    await router.bindAsyncHttpServer(req)
-
-let server = newAsyncHttpServer(true, true)
-waitfor server.serve(Port(8080), cb)
 
 ```
 
@@ -32,10 +29,10 @@ let urlParamHandler = handler(ctx) do:
     let year = ctx.req.getUrlParam "year"
     let month = ctx.req.getUrlParam "month"
     let day = ctx.req.getUrlParam "day"
-    return "id=" & id & ";year=" & year & ";month=" & month & ";day=" & day
+    return ctx.text "id=" & id & ";year=" & year & ";month=" & month & ";day=" & day
 
 let handler = choose(
-    GET >=> routep("/home/{userid : string}/blog/{int:year}/{month: int}/{day:int}") >=> urlParamHandler,
+    GET >=> routep("/home/{userid : string}/blog/{year:int}/{month: int}/{day:int}") >=> urlParamHandler,
 )
 
 ```
@@ -43,6 +40,8 @@ let handler = choose(
 ## auth
 
 ```nim
+# import alpaka/auth/sessionauth
+
 let signinHandler = handler(ctx) do: 
     let id = ctx.req.getQueryParam "id"
     let pass = ctx.req.getQueryParam "pass"
@@ -57,17 +56,20 @@ let handler = choose(
 )
 
 let getUser = proc(id,pass: string): AuthedUser =
-        if id != "tester" or pass != "password":
-            return nil
-        return AuthedUser(
-            id: id,
-            name: id,
-            role: @["normal"]
-        )
-let router = 
-    newRouter(handler)
-    .useSessionAuth(getUser, "/", "cookieName", "hashKey"
-    , 1000, "/", false, true)
+    if id != "tester" or pass != "password":
+        return nil
+    return AuthedUser(
+        id: id,
+        name: id,
+        role: @["normal"]
+    )
+
+handler
+    .newRouter()
+    .useAsyncHttpServer(8080)
+    .useSessionAuth(getUser, "/signin", "cookieName", "hashKey")
+    .run()
+
 
 ```
 
