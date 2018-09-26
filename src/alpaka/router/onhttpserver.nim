@@ -9,8 +9,7 @@ import
     streams,
     sequtils,
     strutils,
-    strtabs,
-    locks
+    strtabs
 import
     ../core/context,
     router
@@ -105,16 +104,15 @@ proc callback (router: Router, s: Server): bool {.procvar.} =
 
 
 proc run(handleRequest: proc (server: Server): bool {.closure.}, port = Port(80)) =
-    var lock: Lock
+
     ## encapsulates the server object and main loop
     var s: Server
     s.open(port, reuseAddr = true)
     #echo("httpserver running on port ", s.port)
     while true:
-        withLock(lock):
-            s.next()
-            if handleRequest(s): break
-            s.client.close()
+        s.next()
+        if handleRequest(s): break
+        s.client.close()
     s.close()
 
 proc proxy(router: Router, port: int): void =
