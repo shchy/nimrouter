@@ -74,18 +74,18 @@ proc bindAsyncHttpServer*(router: Router, req: Request): Future[void] {.gcsafe.}
     except:
         return req.respond(Http500, "Internal Server Error")
         
-proc run(router: Router, port: int): void =
+proc run(router: Router, port: int, address: string): void =
 
     # bind router to asynchttpserver
     proc cb(req:Request) {.async.} =
         await router.bindAsyncHttpServer(req)
 
     let server = newAsyncHttpServer()
-    waitfor server.serve(Port(port), cb)
+    waitfor server.serve(Port(port), cb, address)
 
-proc useAsyncHttpServer*(router: Router, port: int): Router =
+proc useAsyncHttpServer*(router: Router, port: int, address: string = ""): Router =
     let middleware = Server(
-        run         : proc():void =run(router, port)
+        run         : proc():void =run(router, port, address)
     )
     router.addMiddleware(middleware)
     return router

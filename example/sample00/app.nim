@@ -111,7 +111,7 @@ proc main() =
     var r = newRouter(
         handler,
         errorHandler
-    ).useHttpServer(8080)
+    ).useAsyncHttpServer(8080, "0.0.0.0")
 
     r.run()
     
