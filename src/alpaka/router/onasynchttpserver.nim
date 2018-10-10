@@ -81,7 +81,8 @@ proc run(router: Router, port: int, address: string): void =
         await router.bindAsyncHttpServer(req)
 
     let server = newAsyncHttpServer()
-    waitfor server.serve(Port(port), cb, address)
+    asyncCheck server.serve(Port(port), cb, address)
+    runForever()
 
 proc useAsyncHttpServer*(router: Router, port: int, address: string = ""): Router =
     let middleware = Server(
