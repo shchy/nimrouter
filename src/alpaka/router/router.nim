@@ -73,9 +73,8 @@ proc routing*(router: Router, ctx: RouteContext): RouteContext =
         discard router.buildedAfter ctx
         
         return ctx
-    except:
-        let ex = getCurrentException()
-        let msg = getCurrentExceptionMsg()
+    except Exception as ex:
+        let msg = ex.msg
         echo "Exception" & repr(ex) & " message:" & msg
         ctx.res.clear()
 
