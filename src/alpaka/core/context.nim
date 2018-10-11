@@ -95,15 +95,16 @@ proc code*(ctx: RouteContext, code: HttpCode): RouteResult =
     ctx.res.code = code
     return RouteResult.find
     
-proc text*(ctx: RouteContext, content: string): RouteResult =
-    var mime = mimeDB.getMimeType("text")
+proc mime*(ctx: RouteContext, mimeType, content: string): RouteResult =
+    var mime = mimeDB.getMimeType(mimeType)
     ctx.setHeader("Content-Type", mime)
     return ctx.resp(Http200, content)
 
+proc text*(ctx: RouteContext, content: string): RouteResult =
+    return ctx.mime("text", content)
+
 proc html*(ctx: RouteContext, content: string): RouteResult =
-    var mime = mimeDB.getMimeType("html")
-    ctx.setHeader("Content-Type", mime)
-    return ctx.resp(Http200, content)
+    return ctx.mime("html", content)
     
 proc redirect*(ctx: RouteContext, path: string, code: HttpCode = Http302 ): RouteResult =
     ctx.setHeader("Location", path)

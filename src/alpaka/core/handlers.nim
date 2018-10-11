@@ -196,7 +196,10 @@ proc resp*(code: HttpCode, content: string): RouteHandler =
 
 proc code*(code: HttpCode): RouteHandler = 
     handler(ctx) do: ctx.code code
-    
+
+proc mime*(mimeType, content: string): RouteHandler = 
+    handler(ctx) do: ctx.mime(mimeType, content)
+
 proc text*(content: string): RouteHandler = 
     handler(ctx) do: ctx.text content
 
