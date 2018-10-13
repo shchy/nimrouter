@@ -1,7 +1,7 @@
 import 
     httpcore,
     asyncdispatch,
-    asynchttpServer,
+    asynchttpServer2,
     tables,
     uri,
     os,
@@ -74,6 +74,7 @@ proc bindAsyncHttpServer*(router: Router, req: Request): Future[void] {.gcsafe.}
     except:
         return req.respond(Http500, "Internal Server Error")
         
+
 proc run(router: Router, port: int, address: string): void =
 
     # bind router to asynchttpserver
