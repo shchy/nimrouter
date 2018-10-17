@@ -303,7 +303,7 @@ proc serve*(server: AsyncHttpServer, port: Port,
         #echo(f.repr)
     except:
         let ex = getCurrentException()
-        echo ex.msg
+        echo "processClientError:" & ex.msg
   
   server.socket.close()
         

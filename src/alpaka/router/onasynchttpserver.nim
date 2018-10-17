@@ -81,13 +81,9 @@ proc run(router: Router, port: int, address: string): void =
     proc cb(req:Request) {.async.} =
         await router.bindAsyncHttpServer(req)
     
-    while true:
-        try:
-            let server = newAsyncHttpServer()
-            asyncCheck server.serve(Port(port), cb, address)
-            runForever()
-        except Exception as e:
-            echo "server error: " & e.msg
+    let server = newAsyncHttpServer()
+    asyncCheck server.serve(Port(port), cb, address)
+    runForever()
 
 
 proc useAsyncHttpServer*(router: Router, port: int, address: string = ""): Router =
