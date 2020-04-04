@@ -47,7 +47,7 @@ proc bindContextToResponse(req: Request, ctx: RouteContext): Future[void] {.gcsa
 
 # routing for request
 # asynchttpServer
-proc bindAsyncHttpServer*(router: Router, req: Request): Future[void] {.gcsafe.}  =
+proc bindAsyncHttpServer*(router: Router, req: Request): Future[void] {.gcsafe.} =
     let ctx = RouteContext(
         req             : RouteRequest( 
             reqMethod   : req.reqMethod,

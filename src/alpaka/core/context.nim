@@ -15,14 +15,14 @@ export
     request,
     response,
     params
-    
+
 type
     RouteResult* = enum 
         none, 
         find 
-    RouteFunc* = proc (ctx:RouteContext): RouteResult
+    RouteFunc* = proc (ctx:RouteContext): RouteResult 
     RouteHandler* = proc (f:RouteFunc): RouteFunc
-    ErrorHandler* = proc (ex: ref Exception): RouteHandler
+    ErrorHandler* = proc (ex: ref Exception): RouteHandler 
     AuthedUser* = ref object
         id*     : string
         name*   : string
@@ -80,9 +80,11 @@ proc getMiddleware*[T](ctx: RouteContext): T =
 proc withSubRoute*(ctx: RouteContext, path: string): string =
     if strutils.isNilOrWhitespace ctx.subRouteContext:
         return path
-    if path == "/":
-        return ctx.subRouteContext.joinPath ""
-    return ctx.subRouteContext.joinPath path
+    var joinedPath = ctx.subRouteContext.joinPath path
+
+    if path.endsWith("/"):
+        joinedPath = joinedPath & "/"
+    return joinedPath
 
 proc updateSubRoute*(ctx: RouteContext, path: string) =
     ctx.subRouteContext = ctx.withSubRoute path

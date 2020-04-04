@@ -53,7 +53,7 @@ proc build*(router: Router): void =
 
 
 
-proc routing*(router: Router, ctx: RouteContext): RouteContext =
+proc routing*(router: Router, ctx: RouteContext): RouteContext {.gcsafe.} =
     
     router.build()
 

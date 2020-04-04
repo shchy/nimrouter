@@ -1,9 +1,7 @@
 import 
     unittest,
-    uri,
     strutils,
     tables,
-    sequtils,
     os,
     testcommon,
     ../src/alpaka

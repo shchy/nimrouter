@@ -107,7 +107,8 @@ proc route*(path: string): RouteHandler =
     assert( path.startsWith("/"), "Path must start with \"/\"")
     filter(
         proc (ctx: RouteContext): bool =
-            ctx.req.url.path == ctx.withSubRoute path )
+            ctx.req.url.path == ctx.withSubRoute path 
+    )
 
 const urlParamRegex = r"{\s?(\w+?)\s?:\s?(int|string|float)\s?}"
 # path filter with url parameter

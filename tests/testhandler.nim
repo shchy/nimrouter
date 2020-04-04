@@ -1,11 +1,9 @@
 import 
     unittest,
-    uri,
     strutils,
-    tables,
-    sequtils,
     os,
     testcommon,
+    sugar,
     ../src/alpaka
 
 
@@ -17,7 +15,7 @@ suite "test handler":
         ctx.text "hello"
     let world = handler(ctx) do:
         ctx.text "world"
-    let filterBy = filter(rf(ctx) do: 
+    let filterBy = filter(ctx =>  
         not isNilOrWhitespace ctx.getHeader("notSet") )
     let abort = handler(_) do: RouteResult.none
 

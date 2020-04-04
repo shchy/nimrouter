@@ -1,10 +1,8 @@
 import 
     asynchttpserver, 
-    asyncdispatch,
     htmlgen,
     httpcore,
-    os,
-    tables
+    os
 import 
     ../../src/alpaka
 
