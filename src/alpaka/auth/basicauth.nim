@@ -18,7 +18,7 @@ type
 proc before(getUser: GetUser): RouteHandler =
     handler(ctx, next) do:
         let auth = ctx.getHeader("Authorization")
-        if auth == nil:
+        if auth.isNilOrWhitespace:
             return next ctx
     
         let splited = auth.split(" ")

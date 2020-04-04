@@ -5,8 +5,8 @@ import
     httpcore,
     os,
     tables,
-    alpaka,
-    alpaka/auth/sessionauth
+    ../../src/alpaka,
+    ../../src/alpaka/auth/sessionauth
 import
     modules/index
 

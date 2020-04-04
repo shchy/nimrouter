@@ -2,11 +2,11 @@ import
     httpcore,
     strutils,
     sequtils,
-    parseutils,
-    tables,
     nre, options as opt,
     cgi,
-    os, uri, md5, times
+    os, uri, md5, times,
+    sugar
+
 import 
     context
 
@@ -31,12 +31,12 @@ template handler*(c, actions:untyped): untyped =
     result
 
 template rf*(c, actions: untyped): untyped =
-    var result = (
-        proc(ctx: RouteContext): untyped =
+    return (
+        proc(ctx: RouteContext): RouteResult =
             var c = ctx
             actions
     )
-    result
+    
 
 # next bind
 proc `>=>`*(h1,h2: RouteHandler): RouteHandler =
@@ -86,25 +86,28 @@ proc filter*(isMatch: proc(ctx:RouteContext): bool): RouteHandler =
             return RouteResult.none
 
 # all
-let NOTFOUND*   = filter(rf(_) do: true)
+let NOTFOUND*   = filter(ctx => true)
 
 # httpmethod filter
-let HEAD*       = filter(rf(ctx) do: ctx.req.reqMethod == HttpHead)
-let GET*        = filter(rf(ctx) do: ctx.req.reqMethod == HttpGet)
-let POST*       = filter(rf(ctx) do: ctx.req.reqMethod == HttpPost)
-let PUT*        = filter(rf(ctx) do: ctx.req.reqMethod == HttpPut)
-let DELETE*     = filter(rf(ctx) do: ctx.req.reqMethod == HttpDelete)
-let PATCH*      = filter(rf(ctx) do: ctx.req.reqMethod == HttpPatch)
-let TRACE*      = filter(rf(ctx) do: ctx.req.reqMethod == HttpTrace)
-let OPTIONS*    = filter(rf(ctx) do: ctx.req.reqMethod == HttpOptions)
-let CONNECT*    = filter(rf(ctx) do: ctx.req.reqMethod == HttpConnect)
+let HEAD*       = filter(ctx => ctx.req.reqMethod == HttpHead)
+let GET*        = filter(ctx => ctx.req.reqMethod == HttpGet)
+let POST*       = filter(ctx => ctx.req.reqMethod == HttpPost)
+let PUT*        = filter(ctx => ctx.req.reqMethod == HttpPut)
+let DELETE*     = filter(ctx => ctx.req.reqMethod == HttpDelete)
+let PATCH*      = filter(ctx => ctx.req.reqMethod == HttpPatch)
+let TRACE*      = filter(ctx => ctx.req.reqMethod == HttpTrace)
+let OPTIONS*    = filter(ctx => ctx.req.reqMethod == HttpOptions)
+let CONNECT*    = filter(ctx => ctx.req.reqMethod == HttpConnect)
 
-let isNotAuthed* = filter(rf(ctx) do: ctx.user == nil)
-let isAuthed* = filter(rf(ctx) do: ctx.user != nil)
+let isNotAuthed* = filter(ctx => ctx.user == nil)
+let isAuthed* = filter(ctx => ctx.user != nil)
 
 # path filter
 proc route*(path: string): RouteHandler =
-    filter(rf(ctx) do: ctx.req.url.path == ctx.withSubRoute path )
+    assert( path.startsWith("/"), "Path must start with \"/\"")
+    filter(
+        proc (ctx: RouteContext): bool =
+            ctx.req.url.path == ctx.withSubRoute path )
 
 const urlParamRegex = r"{\s?(\w+?)\s?:\s?(int|string|float)\s?}"
 # path filter with url parameter
@@ -112,6 +115,7 @@ const urlParamRegex = r"{\s?(\w+?)\s?:\s?(int|string|float)\s?}"
 #   /user/{ id : string }
 #   /blog/{year : int}/{ month : int }/{ day : int }/{ id : int}
 proc routep*(path: string): RouteHandler =
+    assert( path.startsWith("/"), "Path must start with \"/\"")
     handler(ctx, next) do:
         let expectedSegments = (ctx.withSubRoute path).split("/")
         let segemnts = ctx.req.url.path.split("/")
@@ -135,11 +139,11 @@ proc routep*(path: string): RouteHandler =
                 
             let match = opt.get maybe
             let captures = match.captures().toSeq()
-            if captures.len() != 2:
+            if captures.len() != 2 and captures.all(c => c.some()):
                 return RouteResult.none
                 
-            let name = decodeUrl captures[0]
-            let typeName = decodeUrl captures[1]
+            let name = decodeUrl captures[0].get()
+            let typeName = decodeUrl captures[1].get()
             let value = decodeUrl segment
             
             try:
@@ -158,6 +162,10 @@ proc routep*(path: string): RouteHandler =
         return next ctx
 
 proc subRoute*(path: string, handlers: varargs[RouteHandler]): RouteHandler =
+    var p = path
+    if p.endsWith("/"):
+        p = p.substr(0, p.len() - 2)
+
     let hs = @handlers
     var h : RouteHandler
     if hs.len() == 0:
@@ -168,9 +176,9 @@ proc subRoute*(path: string, handlers: varargs[RouteHandler]): RouteHandler =
         h = choose(hs)
 
     handler(ctx, next) do:
-        if not ctx.req.url.path.startsWith(ctx.withSubRoute path):
+        if not ctx.req.url.path.startsWith(ctx.withSubRoute p):
             return RouteResult.none
-        ctx.updateSubRoute path
+        ctx.updateSubRoute p
         let f = h next
         return f ctx
 

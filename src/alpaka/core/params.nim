@@ -1,5 +1,6 @@
 import 
-    tables
+    tables,
+    strutils
 
 type
     Params* = ref object
@@ -12,7 +13,7 @@ proc newParams*(): Params =
 
 proc getParam*(prms: Params, key: string): string =
     result = prms.data.getOrDefault(key)
-    if result == nil:
+    if result.isNilOrWhitespace:
         result = ""
 
 proc setParam*(prms: Params, key, value: string) =

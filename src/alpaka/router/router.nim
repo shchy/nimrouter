@@ -1,6 +1,7 @@
 import 
     httpcore,
-    sequtils
+    sequtils,
+    sugar
 import
     ../core/context,
     ../core/handlers
@@ -21,8 +22,7 @@ proc newRouter*(handler: RouteHandler, errorHandler: ErrorHandler = nil): Router
     )
 
 proc addMiddleware*(router: Router, middleware: Middleware) =
-    if router.middlewares == nil:
-        router.middlewares = @[]
+    
     router.middlewares.add(middleware)
 
 proc build*(router: Router): void =
@@ -46,7 +46,7 @@ proc build*(router: Router): void =
 
     let handler = before >=> router.handler
 
-    let final = (rf(_) do: RouteResult.find)
+    let final = ((_: RouteContext) => RouteResult.find)
 
     router.buildedFunc = (handler final)
     router.buildedAfter = (after final)
@@ -59,7 +59,7 @@ proc routing*(router: Router, ctx: RouteContext): RouteContext =
 
     ctx.middlewares = router.middlewares
 
-    let final = (rf(_) do: RouteResult.find)
+    let final = ((_: RouteContext) => RouteResult.find)
 
     try:
         

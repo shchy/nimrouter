@@ -1,13 +1,11 @@
 import 
     httpcore,
     asyncdispatch,
-    asynchttpServer2,
-    tables,
-    uri,
+    asynchttpServer,
     os,
     asyncnet,
     streams,
-    sequtils
+    strutils
 import
     ../core/context,
     router
@@ -38,7 +36,7 @@ proc bindContextToResponse(req: Request, ctx: RouteContext): Future[void] {.gcsa
     if existsFile ctx.res.contentFilePath:
         return sendFile(req, ctx.res.code, ctx.res.headers, ctx.res.contentFilePath)
     
-    if ctx.res.body == nil:
+    if ctx.res.body.isNilOrWhitespace:
         ctx.res.body = ""
     
     return req.respond(
@@ -49,7 +47,7 @@ proc bindContextToResponse(req: Request, ctx: RouteContext): Future[void] {.gcsa
 
 # routing for request
 # asynchttpServer
-proc bindAsyncHttpServer*(router: Router, req: Request): Future[void] {.gcsafe.} =
+proc bindAsyncHttpServer*(router: Router, req: Request): Future[void] {.gcsafe.}  =
     let ctx = RouteContext(
         req             : RouteRequest( 
             reqMethod   : req.reqMethod,
@@ -78,11 +76,12 @@ proc bindAsyncHttpServer*(router: Router, req: Request): Future[void] {.gcsafe.}
 proc run(router: Router, port: int, address: string): void =
 
     # bind router to asynchttpserver
-    proc cb(req:Request) {.async.} =
-        await router.bindAsyncHttpServer(req)
-    
     let server = newAsyncHttpServer()
-    asyncCheck server.serve(Port(port), cb, address)
+    asyncCheck server.serve(
+        Port(port), 
+        proc (req: Request): Future[void] {.gcsafe, closure.} =
+            router.bindAsyncHttpServer(req), 
+        address)
     runForever()
 
 

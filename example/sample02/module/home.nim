@@ -1,5 +1,5 @@
 import
-    alpaka
+    ../../../src/alpaka
 
 
 let handlers* =[

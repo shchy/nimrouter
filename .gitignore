@@ -4,3 +4,4 @@ example/*/app
 tests/*
 !tests/*.nim
 bin/*
+*.nims

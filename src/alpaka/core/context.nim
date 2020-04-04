@@ -48,7 +48,7 @@ proc setHeader*(ctx: RouteContext, key, val: string): void =
 proc getHeader*(ctx: RouteContext, key: string): string =
     return ctx.req.headers.getOrDefault(key)
 
-proc setCookie*(ctx: RouteContext, key, val: string, maxAge: int = 0, isSecure, isHttpOnly: bool = false, path: string = nil): void =
+proc setCookie*(ctx: RouteContext, key, val: string, maxAge: int = 0, isSecure, isHttpOnly: bool = false, path: string = ""): void =
     var val = key & "=" & val
     if maxAge != 0:
         val.add("; Max-Age=" & $maxAge)
@@ -80,7 +80,10 @@ proc getMiddleware*[T](ctx: RouteContext): T =
 proc withSubRoute*(ctx: RouteContext, path: string): string =
     if strutils.isNilOrWhitespace ctx.subRouteContext:
         return path
+    if path == "/":
+        return ctx.subRouteContext.joinPath ""
     return ctx.subRouteContext.joinPath path
+
 proc updateSubRoute*(ctx: RouteContext, path: string) =
     ctx.subRouteContext = ctx.withSubRoute path
         

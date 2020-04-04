@@ -1,7 +1,7 @@
 import
     times
 import
-    alpaka
+    ../../../src/alpaka
 
 type
     

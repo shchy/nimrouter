@@ -6,7 +6,7 @@ import
     os,
     tables
 import 
-    alpaka
+    ../../src/alpaka
 
 proc main() =
     # handlers
@@ -77,7 +77,7 @@ proc main() =
                     route("/")                          >=> index,
                     route("/hello/")                    >=> asCacheable(proc():string="hello", 60)  >=> hello,
                     route("/world/")                    >=> asCacheable(proc():string="world", 60)  >=> world,
-                    route("/sleep/")                    >=> asCacheable(proc():string="sleep", 60)  >=> sleepTest >=> text "wakeup",
+                    route("/sleep")                     >=> asCacheable(proc():string="sleep", 60)  >=> sleepTest >=> text "wakeup",
                     route("/redirect/")                 >=> redirect "/",
                     route("/helloworld/")               >=> debugAborting >=> text "not work",
                     route("/helloworld/")               >=> text "hello, world",

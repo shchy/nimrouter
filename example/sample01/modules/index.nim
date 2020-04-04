@@ -1,13 +1,9 @@
 import 
-    alpaka,
-    indexview,
-    strutils,
-    base64,
-    # alpaka/basicauth,
-    alpaka/auth/sessionauth
+    ../../../src/alpaka,
+    ../../../src/alpaka/auth/sessionauth
 
 let home = handler(ctx) do:
-    ctx.html homeView(ctx.user.name)
+    ctx.text ctx.user.name
 
 let login = handler(ctx) do:
     let id = ctx.req.getUrlParam "id"

@@ -1,6 +1,6 @@
 import
-    alpaka,
-    alpaka/auth/sessionauth,
+    ../../../src/alpaka,
+    ../../../src/alpaka/auth/sessionauth,
     ../service/datacontext,
     sequtils
 import 
