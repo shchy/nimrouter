@@ -22,7 +22,6 @@ proc newRouter*(handler: RouteHandler, errorHandler: ErrorHandler = nil): Router
     )
 
 proc addMiddleware*(router: Router, middleware: Middleware) =
-    
     router.middlewares.add(middleware)
 
 proc build*(router: Router): void =
@@ -35,23 +34,20 @@ proc build*(router: Router): void =
             proc (ex: ref Exception): RouteHandler =
                 handler(ctx) do: ctx.resp(Http500, "Internal Server Error")
     
-    let through : RouteHandler = handler(c,n) do:return n c
-    
-    let before = filter(router.middlewares.map do (m:Middleware) -> RouteHandler: m.before
-                , proc (h: RouteHandler): bool = h != nil)
-                .foldl(a >=> b, through)
-    let after = filter(router.middlewares.map do (m:Middleware) -> RouteHandler: m.after
-                , proc (h: RouteHandler): bool = h != nil)
-                .foldl(a >=> b, through)
+    let through: RouteHandler = handler(c, n) do: return n c
+        
+    let before = router.middlewares.map(m => m.before)
+        .filter(h => h != nil)
+        .foldl(a >=> b, through)
+    let after = router.middlewares.map(m => m.after)
+        .filter(h => h != nil)
+        .foldl(a >=> b, through)
 
     let handler = before >=> router.handler
-
     let final = ((_: RouteContext) => RouteResult.find)
 
     router.buildedFunc = (handler final)
     router.buildedAfter = (after final)
-
-
 
 proc routing*(router: Router, ctx: RouteContext): RouteContext {.gcsafe.} =
     
@@ -91,8 +87,8 @@ proc routing*(router: Router, ctx: RouteContext): RouteContext {.gcsafe.} =
 
 
 proc run*(router: Router): void =
-    let runners = filter(router.middlewares.map do (m:Middleware) -> proc():void: m.run
-                        , proc (h: proc():void): bool = h != nil)
+    let runners = router.middlewares.map(m => m.run)
+        .filter(h => h != nil)
     if runners.len() < 0:
         return
     let runner = runners[0]

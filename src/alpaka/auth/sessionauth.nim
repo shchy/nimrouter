@@ -3,7 +3,8 @@ import
     strutils,
     tables,
     md5,
-    sequtils
+    sequtils,
+    sugar
 import 
     ../core/context,
     ../core/handlers,

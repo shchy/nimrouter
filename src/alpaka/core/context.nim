@@ -5,7 +5,8 @@ import
     sequtils,
     strutils,
     mimetypes,
-    os
+    os,
+    sugar
 import
     request,
     response,
@@ -72,8 +73,8 @@ proc getCookie*(ctx: RouteContext, key: string): string =
             break
 
 proc getMiddleware*[T](ctx: RouteContext): T =
-    let mx = ctx.middlewares.filter do (m:Middleware) -> bool: (m of T)
-    if not mx.any(proc(m:Middleware):bool = true) :
+    let mx = ctx.middlewares.filter( m => (m of T))
+    if not mx.any(_ => true) :
         return nil
     return T(mx[0])
     
@@ -88,7 +89,6 @@ proc withSubRoute*(ctx: RouteContext, path: string): string =
 
 proc updateSubRoute*(ctx: RouteContext, path: string) =
     ctx.subRouteContext = ctx.withSubRoute path
-        
 
 ########## end of handler
 proc resp*(ctx: RouteContext, code: HttpCode, content: string): RouteResult =

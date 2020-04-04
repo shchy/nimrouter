@@ -73,7 +73,7 @@ proc chooseFuncs(funcs:seq[RouteFunc]): RouteFunc =
 proc choose*(handlers: varargs[RouteHandler]): RouteHandler =
     var hx = @handlers
     return proc(final: RouteFunc): RouteFunc =
-        var funcs = hx.map(proc(h:RouteHandler):RouteFunc = h final)
+        var funcs = hx.map(h => h final)
         rf(ctx) do:
             return chooseFuncs(funcs) ctx
 
@@ -105,10 +105,7 @@ let isAuthed* = filter(ctx => ctx.user != nil)
 # path filter
 proc route*(path: string): RouteHandler =
     assert( path.startsWith("/"), "Path must start with \"/\"")
-    filter(
-        proc (ctx: RouteContext): bool =
-            ctx.req.url.path == ctx.withSubRoute path 
-    )
+    filter(ctx => ctx.req.url.path == ctx.withSubRoute path )
 
 const urlParamRegex = r"{\s?(\w+?)\s?:\s?(int|string|float)\s?}"
 # path filter with url parameter

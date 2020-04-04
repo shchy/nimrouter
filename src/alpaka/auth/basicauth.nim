@@ -2,7 +2,8 @@ import
     httpcore,
     strutils,
     base64,
-    sequtils
+    sequtils,
+    sugar
 import 
     ../core/context,
     ../core/handlers,
