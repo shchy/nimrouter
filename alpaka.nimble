@@ -20,11 +20,8 @@ task clean, "clean":
     exec "rm -f ./example/sample02/app"
     
 task ex00, "exec sample00":
-    # exec "rm -f ./example/sample00/app"
     exec "nim c -r -d:release ./example/sample00/app.nim"
 task ex01, "exec sample01":
-    exec "rm -f ./example/sample01/app"
     exec "nim c -r -d:release ./example/sample01/app.nim"
 task ex02, "exec sample02":
-    exec "rm -f ./example/sample02/app"
     exec "nim c -r -d:release ./example/sample02/app.nim"

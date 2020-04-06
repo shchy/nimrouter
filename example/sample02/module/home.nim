@@ -1,7 +1,7 @@
 import
-    ../../../src/alpaka
+  ../../../src/alpaka
 
 
 let handlers* =[
-    route("/") >=> html "home"
+  route("/") >=> html "home"
 ] 

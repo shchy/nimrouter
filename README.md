@@ -7,16 +7,16 @@ giraffe(F#) copy
 
 ```nim
 let handler = choose(
-    GET >=> choose(
-        route("/")      >=> text "hello world",
-        route("/ping/") >=> html "pong",
-    ),    
+  GET >=> choose(
+    route("/")    >=> text "hello world",
+    route("/ping/") >=> html "pong",
+  ),  
 )
 
 handler
-    .newRouter()
-    .useAsyncHttpServer(8080)
-    .run()
+  .newRouter()
+  .useAsyncHttpServer(8080)
+  .run()
 
 
 ```
@@ -25,14 +25,14 @@ handler
 
 ```nim
 let urlParamHandler = handler(ctx) do:
-    let id = ctx.req.getUrlParam "userid"
-    let year = ctx.req.getUrlParam "year"
-    let month = ctx.req.getUrlParam "month"
-    let day = ctx.req.getUrlParam "day"
-    return ctx.text "id=" & id & ";year=" & year & ";month=" & month & ";day=" & day
+  let id = ctx.req.getUrlParam "userid"
+  let year = ctx.req.getUrlParam "year"
+  let month = ctx.req.getUrlParam "month"
+  let day = ctx.req.getUrlParam "day"
+  return ctx.text "id=" & id & ";year=" & year & ";month=" & month & ";day=" & day
 
 let handler = choose(
-    GET >=> routep("/home/{userid : string}/blog/{year:int}/{month: int}/{day:int}") >=> urlParamHandler,
+  GET >=> routep("/home/{userid : string}/blog/{year:int}/{month: int}/{day:int}") >=> urlParamHandler,
 )
 
 ```
@@ -43,32 +43,32 @@ let handler = choose(
 # import alpaka/auth/sessionauth
 
 let signinHandler = handler(ctx) do: 
-    let id = ctx.req.getQueryParam "id"
-    let pass = ctx.req.getQueryParam "pass"
-    if not ctx.signin(id, pass):
-        return ctx.code Http401
-    return ctx.redirect("/auth/")
+  let id = ctx.req.getQueryParam "id"
+  let pass = ctx.req.getQueryParam "pass"
+  if not ctx.signin(id, pass):
+    return ctx.code Http401
+  return ctx.redirect("/auth/")
 
 # set routing
 let handler = choose(
-    GET >=> route("/signin") >=> signinHandler,
-    GET >=> route("/auth/") >=> mustBeAuth >=> (handler(ctx) do: ctx.text "hello " & ctx.user.name),    
+  GET >=> route("/signin") >=> signinHandler,
+  GET >=> route("/auth/") >=> mustBeAuth >=> (handler(ctx) do: ctx.text "hello " & ctx.user.name),  
 )
 
 let getUser = proc(id,pass: string): AuthedUser =
-    if id != "tester" or pass != "password":
-        return nil
-    return AuthedUser(
-        id: id,
-        name: id,
-        role: @["normal"]
-    )
+  if id != "tester" or pass != "password":
+    return nil
+  return AuthedUser(
+    id: id,
+    name: id,
+    role: @["normal"]
+  )
 
 handler
-    .newRouter()
-    .useAsyncHttpServer(8080)
-    .useSessionAuth(getUser, "/signin", "cookieName", "hashKey")
-    .run()
+  .newRouter()
+  .useAsyncHttpServer(8080)
+  .useSessionAuth(getUser, "/signin", "cookieName", "hashKey")
+  .run()
 
 
 ```
@@ -77,7 +77,7 @@ handler
 
 ```nim
 let handler = choose(
-    serveDir("/static/", "./assets/"),    
+  serveDir("/static/", "./assets/"),  
 )
 ```
 
@@ -85,7 +85,7 @@ let handler = choose(
 
 ```nim
 let handler = choose(
-    route("/cache/") >=> asCacheable(proc():string ="etag") >=> text "cache me",    
+  route("/cache/") >=> asCacheable(proc():string ="etag") >=> text "cache me",  
 )
 ```
 
@@ -94,13 +94,13 @@ let handler = choose(
 
 ```nim
 let postHandler = handler(ctx) do:
-    let value = ctx.req.getFormParam "text"
-    return ctx.text value 
+  let value = ctx.req.getFormParam "text"
+  return ctx.text value 
 
 let handler = choose(
-    subRoute("/sub/",[
-        route("/") >=> GET >=> text "hello",
-        route("/") >=> POST >=> postHandler,
-    ]) 
+  subRoute("/sub/",[
+    route("/") >=> GET >=> text "hello",
+    route("/") >=> POST >=> postHandler,
+  ]) 
 )
 ```
