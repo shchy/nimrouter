@@ -224,7 +224,6 @@ proc serveDir*(path,localPath: string, maxAge: int = 0): RouteHandler =
     var localPath = localPath
     if not localPath.isAbsolute():
         localPath = joinPath($parseUri(getAppDir()), localPath.replace("./","") )
-    echo localPath
     handler(ctx) do:
         let routePath = ctx.withSubRoute path
         if not ctx.req.url.path.startsWith(routePath):
@@ -233,7 +232,6 @@ proc serveDir*(path,localPath: string, maxAge: int = 0): RouteHandler =
         let reqFilePath = 
             decodeUrl ctx.req.url.path[routePath.len()..ctx.req.url.path.len()-1]
         let localFilePath = joinPath(localPath, reqFilePath)
-        echo localFilePath
         if not localFilePath.startsWith localPath:
             return ctx.code Http403
 
