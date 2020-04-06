@@ -1,18 +1,16 @@
 # Package
 
-version       = "0.1.0"
+version       = "0.1.1"
 author        = "shch"
 description   = "giraffe[F#] copy"
 license       = "MIT"
 
 # Dependencies
 
-requires "nim >= 0.18.0"
+requires "nim >= 1.0.6"
 
-binDir        = "bin"
 srcDir        = "src"
 skipDirs      = @["example", "tests"]
-bin           = @["alpaka"]
 
 task clean, "clean":
     exec "rm -rf ./bin"
@@ -22,7 +20,7 @@ task clean, "clean":
     exec "rm -f ./example/sample02/app"
     
 task ex00, "exec sample00":
-    exec "rm -f ./example/sample00/app"
+    # exec "rm -f ./example/sample00/app"
     exec "nim c -r -d:release ./example/sample00/app.nim"
 task ex01, "exec sample01":
     exec "rm -f ./example/sample01/app"
