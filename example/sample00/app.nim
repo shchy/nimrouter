@@ -2,7 +2,8 @@ import
   asynchttpserver, 
   htmlgen,
   httpcore,
-  os
+  os,
+  sugar
 import 
   ../../src/alpaka
 
@@ -82,7 +83,7 @@ proc main() =
           route("/code/")           >=> code Http200,
           routep("/asdf/{test : int}/")     >=> debugAborting >=> urlParamTest,
           routep("/asdf/{test2 : int}/")    >=> urlParamTest,
-          routep("/asdf/{test3 : string}")  >=> (handler(ctx) do: ctx.text(ctx.req.getUrlParam("test3"))), 
+          routep("/asdf/{test3 : string}")  >=> handlerF(ctx => ctx.text(ctx.req.getUrlParam("test3"))), 
           routep("/asdf/{test4 : float}")   >=> (handler(ctx) do: ctx.text(ctx.req.getUrlParam("test4"))) 
         ),
       route("/ping/") >=>

@@ -139,6 +139,6 @@ proc sendfile*(ctx: RouteContext, filePath: string): RouteResult =
 proc sendView*(ctx: RouteContext, filePath: string): RouteResult =
   var localPath = filePath
   if not localPath.isAbsolute():
-    localPath = $(parseUri(getAppDir()) / localPath)
+    localPath = joinPath($parseUri(getAppDir()), localPath)
   
   return ctx.sendfile($localPath)

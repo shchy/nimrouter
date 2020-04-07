@@ -30,6 +30,20 @@ template handler*(c, actions:untyped): untyped =
   )
   result
 
+
+proc handlerF*(f: proc(x:RouteContext): RouteResult): RouteHandler =
+  return
+    proc (_: RouteFunc): RouteFunc =
+      return proc(ctx: RouteContext): RouteResult =
+        f ctx
+  
+proc handlerF*(f: proc(x:RouteContext, y:RouteFunc): RouteResult): RouteHandler =
+  return
+    proc (next: RouteFunc): RouteFunc =
+      return proc(ctx: RouteContext): RouteResult =
+        f(ctx, next)
+
+
 template rf*(c, actions: untyped): untyped =
   return (
     proc(ctx: RouteContext): RouteResult =
@@ -106,6 +120,7 @@ let isAuthed* = filter(ctx => ctx.user != nil)
 proc route*(path: string): RouteHandler =
   assert( path.startsWith("/"), "Path must start with \"/\"")
   filter(ctx => ctx.req.url.path == ctx.withSubRoute path )
+  
 
 const urlParamRegex = r"{\s?(\w+?)\s?:\s?(int|string|float)\s?}"
 # path filter with url parameter
